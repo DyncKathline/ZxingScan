@@ -20,7 +20,7 @@
             android:id="@+id/title_bar"
             android:layout_width="fill_parent"
             android:layout_height="52dp"
-            android:background="@android:color/white" >
+            android:background="@color/colorPrimary" >
 
             <ImageView
                 android:id="@+id/authorize_return"
