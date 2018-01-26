@@ -114,7 +114,7 @@ public class CommonScanActivity extends AppCompatActivity implements ScanListene
         super.onResume();
         scanManager.onResume();
         rescan.setVisibility(View.INVISIBLE);
-        scan_image.setVisibility(View.GONE);
+        scan_image.setVisibility(View.VISIBLE);
     }
 
     @Override
@@ -150,7 +150,8 @@ public class CommonScanActivity extends AppCompatActivity implements ScanListene
     void startScan() {
         if (rescan.getVisibility() == View.VISIBLE) {
             rescan.setVisibility(View.INVISIBLE);
-            scan_image.setVisibility(View.GONE);
+            scan_image.setVisibility(View.VISIBLE);
+            scan_image.setImageBitmap(null);
             scanManager.reScan();
         }
     }
