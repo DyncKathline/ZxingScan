@@ -1,15 +1,18 @@
 apply plugin: 'com.android.library'
 
+ext {
+    versionCode = 1
+    versionName = "1.0"
+}
+
 android {
     compileSdkVersion 26
-
-
 
     defaultConfig {
         minSdkVersion 14
         targetSdkVersion 26
-        versionCode 1
-        versionName "1.0"
+        versionCode versionCode
+        versionName versionName
 
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
 
@@ -28,5 +31,39 @@ dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
 
     implementation 'com.android.support:appcompat-v7:26.1.0'
-    compile 'com.google.zxing:core:3.3.1'
+    implementation 'com.google.zxing:core:3.3.1'
 }
+
+//解决 gradlew 构建错误: 编码 GBK的不可映射字符
+tasks.withType(Javadoc) {
+//    options.encoding = "UTF-8"
+    options.addStringOption('Xdoclint:none', '-quiet')
+    options.addStringOption('encoding', 'UTF-8')
+}
+
+ext {
+    //显示的目录bintray.user/bintrayRepo/bintrayName
+    bintrayRepo = 'DyncKathline' //这个应该是传到maven的仓库的，即在Open Source Repository界面
+    bintrayName = 'zxinglibrary'  //发布的项目名字，即在Create New Package界面
+
+    //GROUP_ID:ARTIFACT_ID:VERSION
+    publishedGroupId = 'org.dync.kathline'//依赖时的GROUP_ID
+    libraryName = 'zxinglibrary'
+    artifact = 'zxinglibrary'//依赖时的ARTIFACT_ID，这里要与类库名保持一致，即项目的module名
+
+    libraryDescription = '' //项目的描述
+
+    siteUrl = '' // 项目的主页
+    gitUrl = '' // Git仓库的url
+
+    libraryVersion = versionName //依赖时的VERSION
+
+    developerId = 'dync'
+    developerName = 'DyncKathline'
+    developerEmail = 'xiongxuesong@dync.cc'
+
+    licenseName = 'The Apache Software License, Version 2.0'
+    licenseUrl = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+    allLicenses = ["Apache-2.0"]
+}
+apply from: '../bintray.gradle'
