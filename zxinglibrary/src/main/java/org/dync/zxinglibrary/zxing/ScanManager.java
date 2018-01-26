@@ -169,7 +169,7 @@ public class ScanManager implements SurfaceHolder.Callback{
 			// RuntimeException.
 			if (handler == null) {
 				handler = new CaptureActivityHandler(this, cameraManager, scanMode);
-				Log.e("hongliang1", "handler new成功！:"+handler);
+				Log.e(TAG, "handler new成功！:"+handler);
 			}
 
 			initCrop();

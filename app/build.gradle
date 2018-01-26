@@ -29,5 +29,6 @@ dependencies {
     annotationProcessor 'com.jakewharton:butterknife-compiler:8.8.1'
     implementation 'com.google.zxing:core:3.3.1'
     implementation project(':zxinglibrary')
+//    compile 'org.dync.kathline:zxinglibrary:1.0'
     implementation 'com.yanzhenjie:permission:1.1.2'
 }

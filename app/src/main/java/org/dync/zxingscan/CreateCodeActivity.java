@@ -57,10 +57,14 @@ public class CreateCodeActivity extends AppCompatActivity {
                 }
                 break;
             case R.id.btn_create_code_and_img: //生成码
-                Bitmap bitmap = create2Code(key);
-                Bitmap headBitmap = getHeadBitmap(60);
-                if (bitmap != null && headBitmap != null) {
-                    createQRCodeBitmapWithPortrait(bitmap, headBitmap);
+                if(!TextUtils.isEmpty(key)) {
+                    Bitmap bitmap = create2Code(key);
+                    Bitmap headBitmap = getHeadBitmap(60);
+                    if (bitmap != null && headBitmap != null) {
+                        createQRCodeBitmapWithPortrait(bitmap, headBitmap);
+                    }
+                }else {
+                    Toast.makeText(this, "请输入内容", Toast.LENGTH_SHORT).show();
                 }
                 break;
         }
