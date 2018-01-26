@@ -14,11 +14,8 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.Toast;
 
-import com.google.zxing.WriterException;
-
+import org.dync.zxinglibrary.utils.QRCode;
 import org.dync.zxinglibrary.zxing.encode.EncodingHandler;
-
-import java.io.UnsupportedEncodingException;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -57,13 +54,13 @@ public class CreateCodeActivity extends AppCompatActivity {
                 }
                 break;
             case R.id.btn_create_code_and_img: //生成码
-                if(!TextUtils.isEmpty(key)) {
+                if (!TextUtils.isEmpty(key)) {
                     Bitmap bitmap = create2Code(key);
                     Bitmap headBitmap = getHeadBitmap(60);
                     if (bitmap != null && headBitmap != null) {
                         createQRCodeBitmapWithPortrait(bitmap, headBitmap);
                     }
-                }else {
+                } else {
                     Toast.makeText(this, "请输入内容", Toast.LENGTH_SHORT).show();
                 }
                 break;
@@ -89,14 +86,17 @@ public class CreateCodeActivity extends AppCompatActivity {
      */
     private Bitmap create2Code(String key) {
         Bitmap qrCode = null;
-        try {
-            qrCode = EncodingHandler.create2Code(key, 400);
-            iv2Code.setImageBitmap(qrCode);
-        } catch (WriterException e) {
-            e.printStackTrace();
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-        }
+//        try {
+//            qrCode = EncodingHandler.create2Code(key, 500);
+//            iv2Code.setImageBitmap(qrCode);
+//        } catch (WriterException e) {
+//            e.printStackTrace();
+//        } catch (UnsupportedEncodingException e) {
+//            e.printStackTrace();
+//        }
+//            qrCode = QRCode.createQRCode(key);
+        qrCode = QRCode.createQRCodeWithLogo2(key, 500, QRCode.drawableToBitmap(getResources().getDrawable(R.drawable.head)));
+        iv2Code.setImageBitmap(qrCode);
         return qrCode;
     }
 
