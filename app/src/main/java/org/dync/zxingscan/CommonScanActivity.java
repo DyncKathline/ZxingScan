@@ -20,6 +20,7 @@ import android.widget.Toast;
 
 import com.google.zxing.Result;
 
+import org.dync.zxinglibrary.ScanImageView;
 import org.dync.zxinglibrary.utils.Constant;
 import org.dync.zxinglibrary.zxing.ScanListener;
 import org.dync.zxinglibrary.zxing.ScanManager;
@@ -50,7 +51,7 @@ public class CommonScanActivity extends AppCompatActivity implements ScanListene
     @BindView(R.id.service_register_rescan)
     Button rescan;
     @BindView(R.id.scan_image)
-    ImageView scan_image;
+    ScanImageView scan_image;
     @BindView(R.id.authorize_return)
     ImageView authorize_return;
     private int scanMode;//扫描模型（条形，二维码，全部）
@@ -105,6 +106,8 @@ public class CommonScanActivity extends AppCompatActivity implements ScanListene
         iv_light.setOnClickListener(this);
         rescan.setOnClickListener(this);
         authorize_return.setOnClickListener(this);
+
+        scan_image.setMarginColor(getResources().getColor(R.color.colorPrimary));
         //构造出扫描管理器
         scanManager = new ScanManager(this, scanPreview, scanContainer, scanCropView, scanLine, scanMode, this);
     }
