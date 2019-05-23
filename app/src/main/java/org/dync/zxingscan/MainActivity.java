@@ -74,7 +74,7 @@ public class MainActivity extends AppCompatActivity {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             AndPermission.with(mActivity)
                     .requestCode(REQUEST_CODE_PERMISSION)
-                    .permission(Manifest.permission.CAMERA)
+                    .permission(Manifest.permission.CAMERA, Manifest.permission.READ_EXTERNAL_STORAGE)
                     .callback(new PermissionListener() {
                         @Override
                         public void onSucceed(int requestCode, @NonNull List<String> grantPermissions) {

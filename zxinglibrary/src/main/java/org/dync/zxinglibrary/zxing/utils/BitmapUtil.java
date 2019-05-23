@@ -42,11 +42,13 @@ public class BitmapUtil {
         Log.e("hongliang","inSampleSize=" + inSampleSize);
         return inSampleSize;
     }
-    public static Bitmap decodeBitmapFromPath(String photo_path, int reqWidth, int reqHeight) {
+    public static Bitmap decodeBitmapFromPath(String photo_path, int reqWidth, int reqHeight, boolean isFix) {
         // 第一次解析将inJustDecodeBounds设置为true，来获取图片大小
         final BitmapFactory.Options options = new BitmapFactory.Options();
         options.inJustDecodeBounds = true;
-        Bitmap scanBitmap = BitmapFactory.decodeFile(photo_path, options);
+        if(isFix) {
+            Bitmap scanBitmap = BitmapFactory.decodeFile(photo_path, options);
+        }
         // 调用上面定义的方法计算inSampleSize值
         options.inSampleSize = calculateInSampleSize(options, reqWidth, reqHeight);
         // 使用获取到的inSampleSize值再次解析图片

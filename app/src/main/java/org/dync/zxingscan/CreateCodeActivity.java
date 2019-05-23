@@ -3,6 +3,7 @@ package org.dync.zxingscan;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.Rect;
 import android.os.Bundle;
@@ -71,7 +72,8 @@ public class CreateCodeActivity extends AppCompatActivity {
         Bitmap qrCode = null;
         try {
             qrCode = EncodingHandler.createBarCode(key, 600, 300);
-            ivBarCode.setImageBitmap(qrCode);
+            Bitmap bitmap = EncodingHandler.addCode(qrCode, key, 40, Color.BLACK, 20);
+            ivBarCode.setImageBitmap(bitmap);
         } catch (Exception e) {
             Toast.makeText(this, "输入的内容条形码不支持！", Toast.LENGTH_SHORT).show();
             e.printStackTrace();

@@ -1,6 +1,11 @@
 package org.dync.zxinglibrary.zxing.encode;
 
 import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Paint;
+import android.support.annotation.ColorInt;
+import android.text.TextPaint;
+import android.text.TextUtils;
 import android.util.Log;
 
 import com.google.zxing.BarcodeFormat;
@@ -45,6 +50,49 @@ public final class EncodingHandler {
     public static Bitmap createBarCode(String str, Integer width, Integer height) throws Exception {
             BitMatrix bitMatrix = new MultiFormatWriter().encode(str, BarcodeFormat.CODE_128, width, height, getEncodeHintMap());
             return BitMatrixToBitmap(bitMatrix);
+    }
+    /**
+     * 条形码下面添加文本信息
+     * @param src
+     * @param code
+     * @param textSize
+     * @param textColor
+     * @return
+     */
+    public static Bitmap addCode(Bitmap src, String code, int textSize, @ColorInt int textColor, int offset) {
+        if (src == null) {
+            return null;
+        }
+
+        if (TextUtils.isEmpty(code)) {
+            return src;
+        }
+
+        //获取图片的宽高
+        int srcWidth = src.getWidth();
+        int srcHeight = src.getHeight();
+
+        if (srcWidth <= 0 || srcHeight <= 0) {
+            return null;
+        }
+
+        Bitmap bitmap = Bitmap.createBitmap(srcWidth, srcHeight + textSize + offset * 2, Bitmap.Config.ARGB_8888);
+        try {
+            Canvas canvas = new Canvas(bitmap);
+            canvas.drawBitmap(src, 0, 0, null);
+            TextPaint paint = new TextPaint();
+            paint.setTextSize(textSize);
+            paint.setColor(textColor);
+            paint.setTextAlign(Paint.Align.CENTER);
+            canvas.drawText(code,srcWidth/2,srcHeight + textSize /2 + offset,paint);
+            canvas.save();
+            canvas.restore();
+        } catch (Exception e) {
+            bitmap = null;
+            e.printStackTrace();
+        }
+
+        return bitmap;
     }
     /**
      * 获得设置好的编码参数

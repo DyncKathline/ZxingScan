@@ -78,7 +78,7 @@ public class ScanManager implements SurfaceHolder.Callback{
 		this.scanMode=scanMode;
 		//启动动画
 		TranslateAnimation animation = new TranslateAnimation(Animation.RELATIVE_TO_PARENT, 0.0f, Animation.RELATIVE_TO_PARENT, 0.0f, Animation.RELATIVE_TO_PARENT, 0.0f, Animation.RELATIVE_TO_PARENT,
-				0.9f);
+				1.0f);
 		animation.setDuration(4500);
 		animation.setRepeatCount(-1);
 		animation.setRepeatMode(Animation.RESTART);
@@ -289,10 +289,10 @@ public class ScanManager implements SurfaceHolder.Callback{
 
 //				Hashtable<DecodeHintType, String> hints = new Hashtable<DecodeHintType, String>();
 
-				Bitmap bitmap= BitmapUtil.decodeBitmapFromPath(photo_path2,600,600);
+				Bitmap bitmap= BitmapUtil.decodeBitmapFromPath(photo_path2,600,600, false);
+                Log.i(TAG, "run: bitmap w: "+ bitmap.getWidth() + ", h: " + bitmap.getHeight());
 				RGBLuminanceSource source = new RGBLuminanceSource(bitmap);
 				BinaryBitmap bitmap1 = new BinaryBitmap(new HybridBinarizer(source));
-				QRCodeReader reader = new QRCodeReader();
 				MultiFormatReader multiFormatReader=new MultiFormatReader();
 				try {
 					Message msg= Message.obtain();
@@ -300,10 +300,22 @@ public class ScanManager implements SurfaceHolder.Callback{
 					msg.obj = multiFormatReader.decode(bitmap1, hints);
 					photoScanHandler.sendMessage(msg);
 				} catch (Exception e) {
-					Message msg= Message.obtain();
-					msg.what=PhotoScanHandler.PHOTODECODEERROR;
-					msg.obj=new Exception("图片有误，或者图片模糊！");
-					photoScanHandler.sendMessage(msg);
+					bitmap= BitmapUtil.decodeBitmapFromPath(photo_path2,600,600, true);
+					Log.i(TAG, "run: bitmap w: "+ bitmap.getWidth() + ", h: " + bitmap.getHeight());
+					source = new RGBLuminanceSource(bitmap);
+					bitmap1 = new BinaryBitmap(new HybridBinarizer(source));
+					multiFormatReader=new MultiFormatReader();
+					try {
+						Message msg= Message.obtain();
+						msg.what=PhotoScanHandler.PHOTODECODEOK;
+						msg.obj = multiFormatReader.decode(bitmap1, hints);
+						photoScanHandler.sendMessage(msg);
+					} catch (Exception e1) {
+						Message msg= Message.obtain();
+						msg.what=PhotoScanHandler.PHOTODECODEERROR;
+						msg.obj=new Exception("图片有误，或者图片模糊！");
+						photoScanHandler.sendMessage(msg);
+					}
 				}
 			}
 		}).start();
