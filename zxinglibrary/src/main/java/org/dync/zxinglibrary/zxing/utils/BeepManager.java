@@ -75,6 +75,16 @@ public class BeepManager implements MediaPlayer.OnCompletionListener, MediaPlaye
 		}
 	}
 
+	public synchronized void playBeepSoundAndVibrate(boolean playBeep, boolean vibrate) {
+		if (playBeep && mediaPlayer != null) {
+			mediaPlayer.start();
+		}
+		if (vibrate) {
+			Vibrator vibrator = (Vibrator) activity.getSystemService(Context.VIBRATOR_SERVICE);
+			vibrator.vibrate(VIBRATE_DURATION);
+		}
+	}
+
 	static boolean shouldBeep(SharedPreferences prefs, Context activity) {
 		boolean shouldPlayBeep = true;
 		if (shouldPlayBeep) {

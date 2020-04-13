@@ -53,9 +53,12 @@ public class ScanManager implements SurfaceHolder.Callback{
 	final String TAG= ScanManager.class.getSimpleName();
 	Activity activity;
 	ScanListener listener;
-	boolean isOpenLight=false;
+	boolean isOpenLight = false;
+	boolean playBeep = true;
+	boolean vibrate = true;
 
 	private int scanMode;//扫描模型（条形，二维码，全部）
+
 	/**
 	 * 用于启动照相机扫描二维码，在activity的onCreate里面构造出来
 	 * 在activity的生命周期中调用此类相对应的生命周期方法
@@ -64,8 +67,7 @@ public class ScanManager implements SurfaceHolder.Callback{
 	 * @param scanContainer  扫描的布局，全屏布局
 	 * @param scanCropView  扫描的矩形区域
 	 * @param scanLine  扫描线
-	 * 
-	 * 
+	 *
 	 */
 	public ScanManager(Activity activity, SurfaceView scanPreview, View scanContainer,
                        View scanCropView, ImageView scanLine, int scanMode, ScanListener listener) {
@@ -83,14 +85,11 @@ public class ScanManager implements SurfaceHolder.Callback{
 		animation.setRepeatCount(-1);
 		animation.setRepeatMode(Animation.RESTART);
 		scanLine.startAnimation(animation);
-		
 	}
-	/**
-	 * 用于图片扫描的构造函数
-	 * @param listener  结果的监听回调
-	 */
-	public ScanManager(ScanListener listener){
-		this.listener=listener;
+
+	public void setPlayBeepAndVibrate(boolean playBeep, boolean vibrate) {
+		this.playBeep = playBeep;
+		this.vibrate = vibrate;
 	}
 	
 	public void onResume(){
@@ -164,6 +163,9 @@ public class ScanManager implements SurfaceHolder.Callback{
 			return;
 		}
 		try {
+//			int orientation = activity.getResources().getConfiguration().orientation;
+			int orientation = activity.getWindowManager().getDefaultDisplay().getRotation();
+			cameraManager.setConfiguration(orientation);
 			cameraManager.openDriver(surfaceHolder);
 			// Creating the handler starts the preview, which can also throw a
 			// RuntimeException.
@@ -214,7 +216,7 @@ public class ScanManager implements SurfaceHolder.Callback{
 	public void handleDecode(Result rawResult, Bundle bundle) {
 		inactivityTimer.onActivity();
 		//扫描成功播放声音滴一下，可根据需要自行确定什么时候播
-	    beepManager.playBeepSoundAndVibrate();
+	    beepManager.playBeepSoundAndVibrate(playBeep, vibrate);
 		bundle.putInt("width", mCropRect.width());
 		bundle.putInt("height", mCropRect.height());
 		bundle.putString("result", rawResult.getText());

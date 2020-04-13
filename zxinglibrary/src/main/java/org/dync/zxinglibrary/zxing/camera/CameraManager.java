@@ -58,6 +58,8 @@ public final class CameraManager {
 	private int requestedCameraId = -1;
 	private int requestedFramingRectWidth;
 	private int requestedFramingRectHeight;
+
+	private int orientation;
 	/**
 	 * Preview frames are delivered here, which we pass on to the registered handler. Make sure to
 	 * clear the handler so it will only receive one message.
@@ -68,6 +70,10 @@ public final class CameraManager {
 		this.context = context;
 		this.configManager = new CameraConfigurationManager(context);
 		previewCallback = new PreviewCallback(configManager);
+	}
+
+	public synchronized void setConfiguration(int orientation) {
+		this.orientation = orientation;
 	}
 
 	/**
@@ -107,7 +113,7 @@ public final class CameraManager {
 																						// these,
 																						// temporarily
 		try {
-			configManager.setDesiredCameraParameters(theCamera, false);
+			configManager.setDesiredCameraParameters(theCamera, false, orientation);
 		} catch (RuntimeException re) {
 			// Driver failed
 			Log.w(TAG, "Camera rejected parameters. Setting only minimal safe-mode parameters");
@@ -118,7 +124,7 @@ public final class CameraManager {
 				parameters.unflatten(parametersFlattened);
 				try {
 					theCamera.setParameters(parameters);
-					configManager.setDesiredCameraParameters(theCamera, true);
+					configManager.setDesiredCameraParameters(theCamera, true, orientation);
 				} catch (RuntimeException re2) {
 					// Well, darn. Give up
 					Log.w(TAG, "Camera rejected even safe-mode parameters! No configuration");

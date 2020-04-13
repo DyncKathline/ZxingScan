@@ -3,6 +3,7 @@ package org.dync.zxingscan;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.content.res.Configuration;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -110,6 +111,7 @@ public class CommonScanActivity extends AppCompatActivity implements ScanListene
         scan_image.setMarginColor(getResources().getColor(R.color.colorPrimary));
         //构造出扫描管理器
         scanManager = new ScanManager(this, scanPreview, scanContainer, scanCropView, scanLine, scanMode, this);
+        scanManager.setPlayBeepAndVibrate(false, true);
     }
 
     @Override
@@ -194,6 +196,11 @@ public class CommonScanActivity extends AppCompatActivity implements ScanListene
                     }
             }
         }
+    }
+
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
     }
 
     @Override

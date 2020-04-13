@@ -17,10 +17,12 @@ package org.dync.zxinglibrary.zxing.camera;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.content.res.Configuration;
 import android.graphics.Point;
 import android.hardware.Camera;
 import android.util.Log;
 import android.view.Display;
+import android.view.Surface;
 import android.view.WindowManager;
 
 import java.util.ArrayList;
@@ -96,7 +98,7 @@ public final class CameraConfigurationManager {
 		return point;
 	}
 
-	public void setDesiredCameraParameters(Camera camera, boolean safeMode) {
+	public void setDesiredCameraParameters(Camera camera, boolean safeMode, int rotation) {
 		Camera.Parameters parameters = camera.getParameters();
 
 		if (parameters == null) {
@@ -121,8 +123,37 @@ public final class CameraConfigurationManager {
 			cameraResolution.y = afterSize.height;
 		}
 
-		/** 设置相机预览为竖屏 */
-		camera.setDisplayOrientation(90);
+		// 1.获取屏幕切换角度值。
+		int degrees = 0;
+		switch (rotation) {
+			case Surface.ROTATION_0: degrees = 0; break;
+			case Surface.ROTATION_90: degrees = 90; break;
+			case Surface.ROTATION_180: degrees = 180; break;
+			case Surface.ROTATION_270: degrees = 270; break;
+		}
+		// 2.获取摄像头方向。
+		int index = 0;
+		int number = Camera.getNumberOfCameras();
+		while (index < number) {
+			Camera.CameraInfo cameraInfo = new Camera.CameraInfo();
+			Camera.getCameraInfo(index, cameraInfo);
+			if (cameraInfo.facing == Camera.CameraInfo.CAMERA_FACING_BACK) {
+				break;
+			}
+			index++;
+		}
+		android.hardware.Camera.CameraInfo info =
+				new android.hardware.Camera.CameraInfo();
+		android.hardware.Camera.getCameraInfo(index, info);
+		// 3.设置相机显示方向。
+		int result;
+		if (info.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) {
+			result = (info.orientation + degrees) % 360;
+			result = (360 - result) % 360;  // compensate the mirror
+		} else {  // back-facing
+			result = (info.orientation - degrees + 360) % 360;
+		}
+		camera.setDisplayOrientation(result);
 	}
 
 	public Point getCameraResolution() {
