@@ -55,6 +55,8 @@ public final class CameraConfigurationManager {
 	Point screenResolution;
 	// 相机分辨率
 	Point cameraResolution;
+	private Point bestPreviewSize;
+	private Point previewSizeOnScreen;
 
 	public CameraConfigurationManager(Context context) {
 		this.context = context;
@@ -64,25 +66,51 @@ public final class CameraConfigurationManager {
 		Camera.Parameters parameters = camera.getParameters();
 		WindowManager manager = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
 		Display display = manager.getDefaultDisplay();
-		Point theScreenResolution = new Point();
-		theScreenResolution = getDisplaySize(display);
 
-		screenResolution = theScreenResolution;
-		Log.i(TAG, "Screen resolution: " + screenResolution);
-
-		/** 因为换成了竖屏显示，所以不替换屏幕宽高得出的预览图是变形的 */
-		Point screenResolutionForCamera = new Point();
-		screenResolutionForCamera.x = screenResolution.x;
-		screenResolutionForCamera.y = screenResolution.y;
-
-		if (screenResolution.x < screenResolution.y) {
-			screenResolutionForCamera.x = screenResolution.y;
-			screenResolutionForCamera.y = screenResolution.x;
+		int displayRotation = display.getRotation();
+		int cwRotationFromNaturalToDisplay;
+		switch (displayRotation) {
+			case Surface.ROTATION_0:
+				cwRotationFromNaturalToDisplay = 0;
+				break;
+			case Surface.ROTATION_90:
+				cwRotationFromNaturalToDisplay = 90;
+				break;
+			case Surface.ROTATION_180:
+				cwRotationFromNaturalToDisplay = 180;
+				break;
+			case Surface.ROTATION_270:
+				cwRotationFromNaturalToDisplay = 270;
+				break;
+			default:
+				// Have seen this return incorrect values like -90
+				if (displayRotation % 90 == 0) {
+					cwRotationFromNaturalToDisplay = (360 + displayRotation) % 360;
+				} else {
+					throw new IllegalArgumentException("Bad rotation: " + displayRotation);
+				}
 		}
+		Log.i(TAG, "Display at: " + cwRotationFromNaturalToDisplay);
 
-		cameraResolution = findBestPreviewSizeValue(parameters, screenResolutionForCamera);
-		Log.i(TAG, "Camera resolution x: " + cameraResolution.x);
-		Log.i(TAG, "Camera resolution y: " + cameraResolution.y);
+		Point theScreenResolution = new Point();
+		display.getSize(theScreenResolution);
+		screenResolution = theScreenResolution;
+
+		Log.i(TAG, ">>>>>>>Screen resolution in current orientation: " + screenResolution);
+		cameraResolution = CameraConfigurationUtils.findBestPreviewSizeValue(parameters, screenResolution);
+		Log.i(TAG, ">>>>>>>Camera resolution: " + cameraResolution);
+		bestPreviewSize = CameraConfigurationUtils.findBestPreviewSizeValue(parameters, screenResolution);
+		Log.i(TAG, ">>>>>>>Best available preview size: " + bestPreviewSize);
+
+		boolean isScreenPortrait = screenResolution.x < screenResolution.y;
+		boolean isPreviewSizePortrait = bestPreviewSize.x < bestPreviewSize.y;
+
+		if (isScreenPortrait == isPreviewSizePortrait) {
+			previewSizeOnScreen = bestPreviewSize;
+		} else {
+			previewSizeOnScreen = new Point(bestPreviewSize.y, bestPreviewSize.x);
+		}
+		Log.i(TAG, ">>>>>>>Preview size on screen: " + previewSizeOnScreen);
 	}
 
 	@SuppressWarnings("deprecation")
