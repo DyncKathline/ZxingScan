@@ -17,6 +17,7 @@
 package org.dync.zxinglibrary.zxing.camera;
 
 import android.content.Context;
+import android.content.res.Configuration;
 import android.graphics.Point;
 import android.graphics.Rect;
 import android.hardware.Camera;
@@ -213,6 +214,15 @@ public final class CameraManager {
 		return configManager.getCameraResolution();
 	}
 
+	/**
+	 * 获取屏幕分辨率
+	 *
+	 * @return
+	 */
+	public Point getScreenResolution() {
+		return configManager.getScreenResolution();
+	}
+
 	public Camera.Size getPreviewSize() {
 		if (null != camera) {
 			return camera.getParameters().getPreviewSize();
@@ -279,8 +289,10 @@ public final class CameraManager {
 			int width = findDesiredDimensionInRange(screenResolution.x, MIN_FRAME_WIDTH, MAX_FRAME_WIDTH);
 			int height = width;
 
-			int leftOffset = (screenResolution.x - width) / 2;
-			int topOffset = (screenResolution.y - height) / 2;
+            int leftOffset;
+            int topOffset;
+			leftOffset = (screenResolution.x - width) / 2;
+			topOffset = (screenResolution.y - height) / 2;
 			framingRect = new Rect(leftOffset, topOffset, leftOffset + width, topOffset + height);
 			Log.d(TAG, "Calculated framing rect: " + framingRect);
 		}
@@ -388,6 +400,8 @@ public final class CameraManager {
 		if (rect == null) {
 			return null;
 		}
+		Log.e(TAG, String.format("buildLuminanceSource dataWidth=%d," + "dataHeight=%d," + "left=%d," + "top=%d," + "width=%d," + "height=%d", width, height, rect.left, rect.top,
+				rect.width(), rect.height()));
 		// Go ahead and assume it's YUV rather than die.
 		return new PlanarYUVLuminanceSource(data, width, height, rect.left, rect.top,
 				rect.width(), rect.height(), false);

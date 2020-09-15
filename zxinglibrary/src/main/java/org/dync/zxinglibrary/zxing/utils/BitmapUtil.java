@@ -25,7 +25,8 @@ public class BitmapUtil {
         //压缩当前图片占用内存不超过应用可用内存的3/4
         //ARGB_8888  一个像素占用4个字节
         //1兆字节(mb)=1048576字节(b)
-        while(reqHeight*reqWidth*4> AppliationUtil.FREE_MEMORY*1048576/4*3){
+        long FREE_MEMORY = ((int) Runtime.getRuntime().freeMemory())/1024/1024;
+        while(reqHeight*reqWidth*4> FREE_MEMORY*1048576/4*3){
             reqHeight-=50;
             reqWidth-=50;
         }

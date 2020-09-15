@@ -37,19 +37,17 @@ import java.lang.reflect.Field;
 import java.util.Map;
 
 public class ScanManager implements SurfaceHolder.Callback{
+
 	boolean isHasSurface = false;
 	CameraManager cameraManager;
 	//用于拍摄扫描的handler
 	CaptureActivityHandler handler;
 	//用于照片扫描的handler,不可共用，图片扫描是不需要摄像机的
 	PhotoScanHandler photoScanHandler;
-	Rect mCropRect = null;
 	InactivityTimer inactivityTimer;
 	public BeepManager beepManager;
 	SurfaceView scanPreview = null;
 	View scanContainer;
-	View scanCropView;
-	ImageView scanLine;
 	final String TAG= ScanManager.class.getSimpleName();
 	Activity activity;
 	ScanListener listener;
@@ -65,26 +63,14 @@ public class ScanManager implements SurfaceHolder.Callback{
 	 * @param activity   扫描的activity
 	 * @param scanPreview  预览的SurfaceView
 	 * @param scanContainer  扫描的布局，全屏布局
-	 * @param scanCropView  扫描的矩形区域
-	 * @param scanLine  扫描线
 	 *
 	 */
-	public ScanManager(Activity activity, SurfaceView scanPreview, View scanContainer,
-                       View scanCropView, ImageView scanLine, int scanMode, ScanListener listener) {
+	public ScanManager(Activity activity, SurfaceView scanPreview, View scanContainer, int scanMode, ScanListener listener) {
 		this.activity=activity;
 		this.scanPreview=scanPreview;
 		this.scanContainer=scanContainer;
-		this.scanCropView=scanCropView;
-		this.scanLine=scanLine;
 		this.listener=listener;
 		this.scanMode=scanMode;
-		//启动动画
-		TranslateAnimation animation = new TranslateAnimation(Animation.RELATIVE_TO_PARENT, 0.0f, Animation.RELATIVE_TO_PARENT, 0.0f, Animation.RELATIVE_TO_PARENT, 0.0f, Animation.RELATIVE_TO_PARENT,
-				1.0f);
-		animation.setDuration(4500);
-		animation.setRepeatCount(-1);
-		animation.setRepeatMode(Animation.RESTART);
-		scanLine.startAnimation(animation);
 	}
 
 	public void setPlayBeepAndVibrate(boolean playBeep, boolean vibrate) {
@@ -102,7 +88,7 @@ public class ScanManager implements SurfaceHolder.Callback{
 		// off screen.
 		inactivityTimer = new InactivityTimer(activity);
 		beepManager = new BeepManager(activity);
-		cameraManager = new CameraManager(activity.getApplicationContext());
+		cameraManager = new CameraManager(activity);
 		
 		handler = null;
 		if (isHasSurface) {
@@ -117,6 +103,7 @@ public class ScanManager implements SurfaceHolder.Callback{
 		}
 		inactivityTimer.onResume();
 	}
+
 	public void onPause() {
 		if (handler != null) {
 			handler.quitSynchronously();
@@ -129,10 +116,10 @@ public class ScanManager implements SurfaceHolder.Callback{
 			scanPreview.getHolder().removeCallback(this);
 		}
 	}
+
 	public void onDestroy() {
 		inactivityTimer.shutdown();
 	}
-	
 	
 	@Override
 	public void surfaceCreated(SurfaceHolder holder) {
@@ -154,6 +141,7 @@ public class ScanManager implements SurfaceHolder.Callback{
 	public void surfaceDestroyed(SurfaceHolder holder) {
 		isHasSurface = false;
 	}
+
 	void initCamera(SurfaceHolder surfaceHolder) {
 		if (surfaceHolder == null) {
 			throw new IllegalStateException("No SurfaceHolder provided");
@@ -173,8 +161,6 @@ public class ScanManager implements SurfaceHolder.Callback{
 				handler = new CaptureActivityHandler(this, cameraManager, scanMode);
 				Log.e(TAG, "handler new成功！:"+handler);
 			}
-
-			initCrop();
 		} catch (IOException ioe) {
 			Log.e(TAG,"hongliang", ioe);
 			//弹出提示，报错
@@ -187,6 +173,7 @@ public class ScanManager implements SurfaceHolder.Callback{
 			listener.scanError(new Exception("相机打开出错，请检查是否被禁止了该权限！"));
 		}
 	}
+
 	/**
 	 * 开关闪关灯
 	 */
@@ -198,6 +185,7 @@ public class ScanManager implements SurfaceHolder.Callback{
 		}
 		isOpenLight=!isOpenLight;
 	}
+
 	public Handler getHandler() {
 		return handler;
 	}
@@ -205,9 +193,11 @@ public class ScanManager implements SurfaceHolder.Callback{
 	public CameraManager getCameraManager() {
 		return cameraManager;
 	}
-	public Rect getCropRect() {
-		return mCropRect;
+
+	public Activity getActivity() {
+		return activity;
 	}
+
 	/**
 	 * 扫描成功的结果回调
 	 * @param rawResult
@@ -217,48 +207,16 @@ public class ScanManager implements SurfaceHolder.Callback{
 		inactivityTimer.onActivity();
 		//扫描成功播放声音滴一下，可根据需要自行确定什么时候播
 	    beepManager.playBeepSoundAndVibrate(playBeep, vibrate);
-		bundle.putInt("width", mCropRect.width());
-		bundle.putInt("height", mCropRect.height());
+		bundle.putInt("width", cameraManager.getFramingRect().width());
+		bundle.putInt("height", cameraManager.getFramingRect().height());
 		bundle.putString("result", rawResult.getText());
 		listener.scanResult(rawResult, bundle);
 	}
+
 	public void handleDecodeError(Exception e){
 		listener.scanError(e);
 	}
-	/**
-	 * 初始化截取的矩形区域
-	 */
-	void initCrop() {
-		int cameraWidth = cameraManager.getCameraResolution().y;
-		int cameraHeight = cameraManager.getCameraResolution().x;
 
-		/** 获取布局中扫描框的位置信息 */
-		int[] location = new int[2];
-		scanCropView.getLocationInWindow(location);
-
-		int cropLeft = location[0];
-		int cropTop = location[1] - getStatusBarHeight();
-
-		int cropWidth = scanCropView.getWidth();
-		int cropHeight = scanCropView.getHeight();
-
-		/** 获取布局容器的宽高 */
-		int containerWidth = scanContainer.getWidth();
-		int containerHeight = scanContainer.getHeight();
-
-		/** 计算最终截取的矩形的左上角顶点x坐标 */
-		int x = cropLeft * cameraWidth / containerWidth;
-		/** 计算最终截取的矩形的左上角顶点y坐标 */
-		int y = cropTop * cameraHeight / containerHeight;
-
-		/** 计算最终截取的矩形的宽度 */
-		int width = cropWidth * cameraWidth / containerWidth;
-		/** 计算最终截取的矩形的高度 */
-		int height = cropHeight * cameraHeight / containerHeight;
-
-		/** 生成最终的截取的矩形 */
-		mCropRect = new Rect(x, y, width + x, height + y);
-	}
 	int getStatusBarHeight() {
 		try {
 			Class<?> c = Class.forName("com.android.internal.R$dimen");
@@ -271,6 +229,7 @@ public class ScanManager implements SurfaceHolder.Callback{
 		}
 		return 0;
 	}
+
 	/**
 	 * 用于扫描本地图片二维码或者一维码
 	 * @param photo_path2 本地图片的所在位置
@@ -322,6 +281,7 @@ public class ScanManager implements SurfaceHolder.Callback{
 			}
 		}).start();
 	}
+
 	/**
 	 * 扫描一次后，如需再次扫描，请调用这个方法
 	 */
@@ -330,6 +290,7 @@ public class ScanManager implements SurfaceHolder.Callback{
 			handler.sendEmptyMessage(R.id.restart_preview);
 		}
 	}
+
 	public boolean isScanning(){
 		if(handler!=null){
 			return handler.isScanning();

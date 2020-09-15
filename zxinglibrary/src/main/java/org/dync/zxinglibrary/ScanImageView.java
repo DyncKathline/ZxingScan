@@ -9,9 +9,10 @@ import android.util.AttributeSet;
 import android.util.TypedValue;
 
 /**
- * 作者：王敏 on 2015/8/21 17:31
- * 类说明：画出扫描框的四个脚的脚边框，也可以直接用一张图片代替
+ *
+ * 画出扫描框的四个脚的脚边框，也可以直接用一张图片代替
  */
+@Deprecated
 public class ScanImageView extends android.support.v7.widget.AppCompatImageView {
     private Context context;
     private Paint mPaint;

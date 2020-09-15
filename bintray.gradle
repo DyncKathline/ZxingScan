@@ -1,4 +1,6 @@
 apply plugin: 'com.github.dcendents.android-maven'
+//gradlew install
+//gradlew bintrayUpload
 
 group = publishedGroupId                               // Maven Group ID for the artifact
 

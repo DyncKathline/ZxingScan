@@ -10,6 +10,11 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
+    <org.dync.zxinglibrary.zxing.ViewfinderView
+        android:id="@+id/scan_container"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"/>
+
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -30,7 +35,7 @@
                 android:background="@color/colorPrimary">
 
                 <ImageView
-                    android:id="@+id/authorize_return"
+                    android:id="@+id/img_back"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_alignParentLeft="true"
@@ -41,7 +46,7 @@
                     android:src="@drawable/ic_my_returns_arrow" />
 
                 <TextView
-                    android:id="@+id/common_title_TV_center"
+                    android:id="@+id/tv_title"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_centerHorizontal="true"
@@ -79,33 +84,6 @@
                 android:layout_weight="1"
                 android:background="@color/scan_bg" />
 
-            <RelativeLayout
-                android:id="@+id/capture_crop_view"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="2.5"
-                android:background="@android:color/transparent">
-
-                <ImageView
-                    android:id="@+id/capture_scan_line"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_alignParentTop="true"
-                    android:background="@drawable/qrcode_line" />
-
-                <org.dync.zxinglibrary.ScanImageView
-                    android:id="@+id/scan_image"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent" />
-            </RelativeLayout>
-
-            <ImageView
-                android:id="@+id/right_mask"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:background="@color/scan_bg" />
-
         </LinearLayout>
 
         <!-- 扫描框底部的布局 -->
@@ -130,7 +108,7 @@
                 android:textSize="14sp" />
 
             <TextView
-                android:id="@+id/iv_light"
+                android:id="@+id/img_light"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_alignParentRight="true"
@@ -140,7 +118,7 @@
                 android:clickable="true" />
 
             <TextView
-                android:id="@+id/qrcode_ic_back"
+                android:id="@+id/img_exit"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_below="@id/scan_hint"
@@ -149,7 +127,7 @@
                 android:clickable="true" />
 
             <TextView
-                android:id="@+id/qrcode_g_gallery"
+                android:id="@+id/img_gallery"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_alignParentLeft="true"
@@ -161,10 +139,10 @@
                 android:textSize="20sp" />
 
             <Button
-                android:id="@+id/service_register_rescan"
+                android:id="@+id/btn_rescan"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_below="@id/qrcode_g_gallery"
+                android:layout_below="@id/img_gallery"
                 android:layout_centerHorizontal="true"
                 android:layout_gravity="center_horizontal"
                 android:layout_marginTop="20dp"

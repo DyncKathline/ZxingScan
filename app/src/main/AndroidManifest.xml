@@ -25,8 +25,10 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".CommonScanActivity" />
-        <activity android:name=".CreateCodeActivity"></activity>
+        <activity android:name=".CommonScanActivity"
+            android:screenOrientation="landscape"/>
+        <activity android:name=".CreateCodeActivity"
+            android:screenOrientation="portrait"></activity>
     </application>
 
 </manifest>
