@@ -79,6 +79,7 @@ public final class ViewfinderView extends View {
     private static final int MAX_RESULT_POINTS = 20;
 
     private Bitmap resultBitmap;
+    private Bitmap lineBitmap;
 
     /**
      * 遮掩层的颜色
@@ -119,6 +120,8 @@ public final class ViewfinderView extends View {
         possibleResultPoints = new ArrayList<ResultPoint>(5);
         lastPossibleResultPoints = null;
 
+        lineBitmap = ((BitmapDrawable) getResources()
+                .getDrawable(R.mipmap.qrcode_default_scan_line)).getBitmap();
     }
 
     public void setCameraManager(CameraManager cameraManager) {
@@ -203,8 +206,7 @@ public final class ViewfinderView extends View {
         lineRect.right = frame.right - MIDDLE_LINE_PADDING;
         lineRect.top = slideTop;
         lineRect.bottom = (slideTop + MIDDLE_LINE_WIDTH);
-        canvas.drawBitmap(((BitmapDrawable) (BitmapDrawable) getResources()
-                .getDrawable(R.mipmap.qrcode_default_scan_line)).getBitmap(), null, lineRect, paint);
+        canvas.drawBitmap(lineBitmap, null, lineRect, paint);
 
     }
 
@@ -248,6 +250,15 @@ public final class ViewfinderView extends View {
     }
 
     /**
+     * 设置扫描线
+     * @param bitmap
+     */
+    public void setScanningLine(Bitmap bitmap) {
+        lineBitmap = bitmap;
+        invalidate();
+    }
+
+    /**
      * 设置颜色
      *
      * @param laserColor
@@ -256,6 +267,14 @@ public final class ViewfinderView extends View {
         this.mColor = laserColor;
         paint.setColor(this.mColor);
         invalidate();
+    }
+
+    public void setCornerLineH(int cornerLineH) {
+        this.cornerLineH = cornerLineH;
+    }
+
+    public void setCornerLineW(int cornerLineW) {
+        this.cornerLineW = cornerLineW;
     }
 
     public void drawViewfinder() {

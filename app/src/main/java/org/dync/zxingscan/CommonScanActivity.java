@@ -8,6 +8,7 @@ import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import android.graphics.drawable.BitmapDrawable;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.support.v7.app.AppCompatActivity;
@@ -123,6 +124,8 @@ public class CommonScanActivity extends AppCompatActivity implements ScanListene
         scanContainer.setVisibility(View.VISIBLE);
         scanContainer.setCameraManager(scanManager.getCameraManager());
         scanContainer.setLaserColor(getResources().getColor(R.color.colorAccent));
+        scanContainer.setScanningLine(((BitmapDrawable) getResources()
+                .getDrawable(R.mipmap.pic_scan_3scanlight)).getBitmap());
     }
 
     @Override
