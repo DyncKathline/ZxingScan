@@ -31,7 +31,6 @@ import android.view.WindowManager;
 public final class CameraConfigurationManager {
 
 	static final String TAG = "CameraConfiguration";
-
 	final Context context;
 
 	// 屏幕分辨率
@@ -57,7 +56,7 @@ public final class CameraConfigurationManager {
 		Log.i(TAG, ">>>>>>>Camera resolution: " + cameraResolution);
 	}
 
-	public void setDesiredCameraParameters(Camera camera, boolean safeMode, int rotation) {
+	public void setDesiredCameraParameters(Camera camera, boolean safeMode) {
 		Camera.Parameters parameters = camera.getParameters();
 
 		if (parameters == null) {
@@ -74,11 +73,6 @@ public final class CameraConfigurationManager {
 		Log.i(TAG, ">>>>>>>setPreviewSize Preview size on screen: " + cameraResolution);
 		parameters.setPreviewSize(cameraResolution.x, cameraResolution.y);
 		camera.setParameters(parameters);
-		if (context.getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT) {
-			camera.setDisplayOrientation(90);
-		} else {//如果是横屏
-			camera.setDisplayOrientation(0);
-		}
 	}
 
 	public Point getCameraResolution() {

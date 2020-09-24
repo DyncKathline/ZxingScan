@@ -16,12 +16,98 @@
 
 package org.dync.zxinglibrary.zxing.camera.open;
 
+import android.content.res.Configuration;
 import android.hardware.Camera;
 import android.util.Log;
 
 public class OpenCameraInterface {
 
 	static final String TAG = OpenCameraInterface.class.getName();
+	private static OpenCameraInterface mInstance;
+	private int mFrontCameraId = -1;
+	private int mBackCameraId = -1;
+	private Camera mCamera;
+	private int mCameraId = -1;
+
+	public static OpenCameraInterface getInstance() {
+		if(mInstance == null) {
+			synchronized (OpenCameraInterface.class) {
+				if(mInstance == null) {
+					mInstance = new OpenCameraInterface();
+				}
+			}
+		}
+		return mInstance;
+	}
+
+	/**
+	 * 初始化摄像头信息。
+	 */
+	public void initCameraInfo() {
+		int numberOfCameras = Camera.getNumberOfCameras();// 获取摄像头个数
+		for (int cameraId = 0; cameraId < numberOfCameras; cameraId++) {
+			Camera.CameraInfo cameraInfo = new Camera.CameraInfo();
+			Camera.getCameraInfo(cameraId, cameraInfo);
+			if (cameraInfo.facing == Camera.CameraInfo.CAMERA_FACING_BACK) {
+				// 后置摄像头信息
+				mBackCameraId = cameraId;
+			} else if (cameraInfo.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) {
+				// 前置摄像头信息
+				mFrontCameraId = cameraId;
+			}
+		}
+	}
+
+	/**
+	 * 切换前后置时切换ID
+	 */
+	public int switchCameraId() {
+		if (mCameraId == mFrontCameraId && hasBackCamera()) {
+			return mBackCameraId;
+		} else if (mCameraId == mBackCameraId && hasFrontCamera()) {
+			return mFrontCameraId;
+		} else {
+			throw new RuntimeException("No available camera id to switch.");
+		}
+	}
+
+	/**
+	 * 判断是否有后置摄像头。
+	 *
+	 * @return true 代表有后置摄像头
+	 */
+	private boolean hasBackCamera() {
+		return mBackCameraId != -1;
+	}
+
+	/**
+	 * 判断是否有前置摄像头。
+	 *
+	 * @return true 代表有前置摄像头
+	 */
+	private boolean hasFrontCamera() {
+		return mFrontCameraId != -1;
+	}
+
+	/**
+	 * 获取要开启的相机 ID，优先开启后置。
+	 */
+	private int getAutoCameraId() {
+		if (hasBackCamera()) {
+			return mBackCameraId;
+		} else if (hasFrontCamera()) {
+			return mFrontCameraId;
+		} else {
+			throw new RuntimeException("No available camera id found.");
+		}
+	}
+
+	/**
+	 * 返回当前的摄像头id
+	 */
+	public int getCameraId() {
+		return mCameraId;
+	}
 
 	/**
 	 * Opens the requested camera with {@link Camera#open(int)}, if one exists.
@@ -31,46 +117,18 @@ public class OpenCameraInterface {
 	 *            "no preference"
 	 * @return handle to {@link Camera} that was opened
 	 */
-	public static Camera open(int cameraId) {
-
+	public Camera open(int cameraId) {
 		int numCameras = Camera.getNumberOfCameras();
-		if (numCameras == 0) {
+		if (numCameras == 0 || (!hasBackCamera() && !hasFrontCamera())) {
 			Log.w(TAG, "No cameras!");
 			return null;
 		}
 
-		boolean explicitRequest = cameraId >= 0;
+		mCamera = Camera.open(cameraId);
+		mCameraId = cameraId;
+		Log.d(TAG, "Camera[" + cameraId + "] has been opened.");
 
-		if (!explicitRequest) {
-			// Select a camera if no explicit camera requested
-			int index = 0;
-			while (index < numCameras) {
-				Camera.CameraInfo cameraInfo = new Camera.CameraInfo();
-				Camera.getCameraInfo(index, cameraInfo);
-				if (cameraInfo.facing == Camera.CameraInfo.CAMERA_FACING_BACK) {
-					break;
-				}
-				index++;
-			}
-
-			cameraId = index;
-		}
-
-		Camera camera;
-		if (cameraId < numCameras) {
-			Log.i(TAG, "Opening camera #" + cameraId);
-			camera = Camera.open(cameraId);
-		} else {
-			if (explicitRequest) {
-				Log.w(TAG, "Requested camera does not exist: " + cameraId);
-				camera = null;
-			} else {
-				Log.i(TAG, "No camera facing back; returning camera #0");
-				camera = Camera.open(0);
-			}
-		}
-
-		return camera;
+		return mCamera;
 	}
 
 	/**
@@ -79,8 +137,8 @@ public class OpenCameraInterface {
 	 * 
 	 * @return handle to {@link Camera} that was opened
 	 */
-	public static Camera open() {
-		return open(-1);
+	public Camera open() {
+		return open(getAutoCameraId());
 	}
 
 }

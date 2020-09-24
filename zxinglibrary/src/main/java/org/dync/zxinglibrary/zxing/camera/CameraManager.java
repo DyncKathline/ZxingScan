@@ -17,6 +17,7 @@
 package org.dync.zxinglibrary.zxing.camera;
 
 import android.content.Context;
+import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.graphics.Point;
 import android.graphics.Rect;
@@ -50,6 +51,7 @@ public final class CameraManager {
 
 	private final Context context;
 	private final CameraConfigurationManager configManager;
+	private SurfaceHolder holder;
 	private Camera camera;
 	private AutoFocusManager autoFocusManager;
 	private Rect framingRect;
@@ -60,7 +62,7 @@ public final class CameraManager {
 	private int requestedFramingRectWidth;
 	private int requestedFramingRectHeight;
 
-	private int orientation;
+	private int orientation = -1;
 	/**
 	 * Preview frames are delivered here, which we pass on to the registered handler. Make sure to
 	 * clear the handler so it will only receive one message.
@@ -84,19 +86,34 @@ public final class CameraManager {
 	 * @throws IOException Indicates the camera driver failed to open.
 	 */
 	public synchronized void openDriver(SurfaceHolder holder) throws IOException {
+		this.holder = holder;
 		Camera theCamera = camera;
 		if (theCamera == null) {
 
+			OpenCameraInterface openCameraInterface = OpenCameraInterface.getInstance();
+			openCameraInterface.initCameraInfo();
 			if (requestedCameraId >= 0) {
-				theCamera = OpenCameraInterface.open(requestedCameraId);
+				theCamera = openCameraInterface.open(requestedCameraId);
 			} else {
-				theCamera = OpenCameraInterface.open();
+				theCamera = openCameraInterface.open();
+				requestedCameraId = openCameraInterface.getCameraId();
 			}
 
 			if (theCamera == null) {
 				throw new IOException("Camera.open() failed to return object from driver");
 			}
 			camera = theCamera;
+			if(camera != null) {
+				if(orientation == -1) {
+					if (context.getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT) {
+						camera.setDisplayOrientation(90);
+					} else {//如果是横屏
+						camera.setDisplayOrientation(0);
+					}
+				}else {
+					camera.setDisplayOrientation(orientation);
+				}
+			}
 		}
 
 		if (!initialized) {
@@ -114,7 +131,7 @@ public final class CameraManager {
 																						// these,
 																						// temporarily
 		try {
-			configManager.setDesiredCameraParameters(theCamera, false, orientation);
+			configManager.setDesiredCameraParameters(theCamera, false);
 		} catch (RuntimeException re) {
 			// Driver failed
 			Log.w(TAG, "Camera rejected parameters. Setting only minimal safe-mode parameters");
@@ -125,7 +142,7 @@ public final class CameraManager {
 				parameters.unflatten(parametersFlattened);
 				try {
 					theCamera.setParameters(parameters);
-					configManager.setDesiredCameraParameters(theCamera, true, orientation);
+					configManager.setDesiredCameraParameters(theCamera, true);
 				} catch (RuntimeException re2) {
 					// Well, darn. Give up
 					Log.w(TAG, "Camera rejected even safe-mode parameters! No configuration");
@@ -228,6 +245,26 @@ public final class CameraManager {
 			return camera.getParameters().getPreviewSize();
 		}
 		return null;
+	}
+
+	public void switchCamera() {
+		int numberOfCameras = Camera.getNumberOfCameras();// 获取摄像头个数
+		if (numberOfCameras == 1) {
+			return;
+		}
+		requestedCameraId = OpenCameraInterface.getInstance().switchCameraId();// 切换摄像头 ID
+		stopPreview();// 停止预览
+		closeDriver();// 关闭当前的摄像头
+		try {
+			openDriver(holder);// 开启新的摄像头
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		startPreview();// 开启预览
+	}
+
+	public boolean hasLight() {
+		return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA_FLASH);
 	}
 
 	/**
@@ -400,8 +437,6 @@ public final class CameraManager {
 		if (rect == null) {
 			return null;
 		}
-		Log.e(TAG, String.format("buildLuminanceSource dataWidth=%d," + "dataHeight=%d," + "left=%d," + "top=%d," + "width=%d," + "height=%d", width, height, rect.left, rect.top,
-				rect.width(), rect.height()));
 		// Go ahead and assume it's YUV rather than die.
 		return new PlanarYUVLuminanceSource(data, width, height, rect.left, rect.top,
 				rect.width(), rect.height(), false);

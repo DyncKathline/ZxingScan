@@ -54,6 +54,7 @@ public class ScanManager implements SurfaceHolder.Callback{
 	boolean isOpenLight = false;
 	boolean playBeep = true;
 	boolean vibrate = true;
+	int orientation = -1;
 
 	private int scanMode;//扫描模型（条形，二维码，全部）
 
@@ -76,6 +77,10 @@ public class ScanManager implements SurfaceHolder.Callback{
 	public void setPlayBeepAndVibrate(boolean playBeep, boolean vibrate) {
 		this.playBeep = playBeep;
 		this.vibrate = vibrate;
+	}
+
+	public void setConfiguration(int orientation) {
+		this.orientation = orientation;
 	}
 	
 	public void onResume(){
@@ -151,8 +156,6 @@ public class ScanManager implements SurfaceHolder.Callback{
 			return;
 		}
 		try {
-//			int orientation = activity.getResources().getConfiguration().orientation;
-			int orientation = activity.getWindowManager().getDefaultDisplay().getRotation();
 			cameraManager.setConfiguration(orientation);
 			cameraManager.openDriver(surfaceHolder);
 			// Creating the handler starts the preview, which can also throw a
@@ -162,15 +165,21 @@ public class ScanManager implements SurfaceHolder.Callback{
 				Log.e(TAG, "handler new成功！:"+handler);
 			}
 		} catch (IOException ioe) {
-			Log.e(TAG,"hongliang", ioe);
+			Log.e(TAG,"", ioe);
 			//弹出提示，报错
 			ioe.printStackTrace();
 			listener.scanError(new Exception("相机打开出错，请检查是否被禁止了该权限！"));
 		} catch (RuntimeException e) {
-			Log.e(TAG, "hongliang", e);
+			Log.e(TAG, "", e);
 			//弹出提示，报错
 			e.printStackTrace();
 			listener.scanError(new Exception("相机打开出错，请检查是否被禁止了该权限！"));
+		}
+	}
+
+	public void switchCamera() {
+		if(cameraManager != null) {
+			cameraManager.switchCamera();
 		}
 	}
 
@@ -178,12 +187,14 @@ public class ScanManager implements SurfaceHolder.Callback{
 	 * 开关闪关灯
 	 */
 	public void switchLight(){
-		if(isOpenLight){
-			cameraManager.offLight();
-		}else{
-			cameraManager.openLight();
+		if(cameraManager.hasLight()) {
+			if (isOpenLight) {
+				cameraManager.offLight();
+			} else {
+				cameraManager.openLight();
+			}
+			isOpenLight = !isOpenLight;
 		}
-		isOpenLight=!isOpenLight;
 	}
 
 	public Handler getHandler() {
