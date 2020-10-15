@@ -105,11 +105,13 @@ public final class CameraManager {
 				throw new IOException("Camera.open() failed to return object from driver");
 			}
 			if(orientation == -1) {
-				if (mContext.getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT) {
-					mCamera.setDisplayOrientation(90);
-				} else {//如果是横屏
-					mCamera.setDisplayOrientation(0);
-				}
+				int degrees = getCameraDisplayOrientation(mContext, mCameraId);
+				mCamera.setDisplayOrientation(degrees);
+//				if (mContext.getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT) {
+//					mCamera.setDisplayOrientation(90);
+//				} else {//如果是横屏
+//					mCamera.setDisplayOrientation(0);
+//				}
 			}else {
 				mCamera.setDisplayOrientation(orientation);
 			}
@@ -295,13 +297,6 @@ public final class CameraManager {
 			mCamera = Camera.open(cameraId);
 			mCameraId = cameraId;
 			Log.d(TAG, "Camera[" + cameraId + "] has been opened.");
-			assert mCamera != null;
-			mCamera.setDisplayOrientation(getCameraDisplayOrientation(mContext, cameraId));
-//            if (mContext.getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT) {
-//                mCamera.setDisplayOrientation(90);
-//            } else {//如果是横屏
-//                mCamera.setDisplayOrientation(0);
-//            }
 		}
 		return mCamera;
 	}
@@ -323,9 +318,6 @@ public final class CameraManager {
 		android.hardware.Camera.CameraInfo info =
 				new android.hardware.Camera.CameraInfo();
 		android.hardware.Camera.getCameraInfo(cameraId, info);
-
-//        int rotation = activity.getWindowManager().getDefaultDisplay()
-//                .getRotation();
 		WindowManager wm = (WindowManager) activity.getSystemService(Context.WINDOW_SERVICE);
 		int rotation = wm.getDefaultDisplay().getRotation();
 		int degrees = 0;
@@ -351,6 +343,21 @@ public final class CameraManager {
 		} else {  // back-facing
 			result = (info.orientation - degrees + 360) % 360;
 		}
+		if (mContext.getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT) {
+			if(rotation == Surface.ROTATION_90) {
+				result = (result + 270)%360;
+			}else if(rotation == Surface.ROTATION_270) {
+				result = (result + 90)%360;
+			}
+		}else {
+			if(rotation == Surface.ROTATION_0) {
+				result = (result + 90)%360;
+			}else if(rotation == Surface.ROTATION_180) {
+				result = (result + 270)%360;
+			}
+		}
+		String msg = "PORTRAIT is " + (mContext.getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT) + ", Camera[" + cameraId + "] rotation is " + info.orientation + ", device rotation is " + degrees + ", result is " + result;
+		Log.d(TAG, msg);
 		return result;
 	}
 

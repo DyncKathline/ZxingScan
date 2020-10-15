@@ -111,12 +111,6 @@ public class CommonScanActivity extends AppCompatActivity implements ScanListene
         //构造出扫描管理器
         scanManager = new ScanManager(this, capturePreview, scanContainer, scanMode, this);
         scanManager.setPlayBeepAndVibrate(false, true);
-//        if (getBaseContext().getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT) {
-//            scanManager.setConfiguration(90);
-//        } else {//如果是横屏
-//            scanManager.setConfiguration(0);
-////            scanManager.setConfiguration(180);
-//        }
         scanContainer.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
