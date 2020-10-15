@@ -26,12 +26,12 @@ public class PreviewCallback implements Camera.PreviewCallback {
 
 	static final String TAG = PreviewCallback.class.getSimpleName();
 
-	final CameraConfigurationManager configManager;
+	final Point cameraResolution;
 	Handler previewHandler;
 	int previewMessage;
 
-	public PreviewCallback(CameraConfigurationManager configManager) {
-		this.configManager = configManager;
+	public PreviewCallback(Point cameraResolution) {
+		this.cameraResolution = cameraResolution;
 	}
 
 	public void setHandler(Handler previewHandler, int previewMessage) {
@@ -41,7 +41,6 @@ public class PreviewCallback implements Camera.PreviewCallback {
 
 	@Override
 	public void onPreviewFrame(byte[] data, Camera camera) {
-		Point cameraResolution = configManager.getCameraResolution();
 		Handler thePreviewHandler = previewHandler;
 		if (cameraResolution != null && thePreviewHandler != null) {
 			Message message = thePreviewHandler.obtainMessage(previewMessage, cameraResolution.x, cameraResolution.y, data);

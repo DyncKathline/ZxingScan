@@ -259,7 +259,7 @@ public final class ViewfinderView extends View {
     }
 
     /**
-     * 设置颜色
+     * 设置四周边角的颜色
      *
      * @param laserColor
      */

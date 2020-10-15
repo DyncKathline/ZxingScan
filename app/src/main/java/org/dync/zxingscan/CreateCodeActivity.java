@@ -9,10 +9,12 @@ import android.graphics.Rect;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.text.TextUtils;
+import android.view.SurfaceView;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.RelativeLayout;
 import android.widget.Toast;
 
 import org.dync.zxinglibrary.utils.QRCode;
@@ -40,6 +42,19 @@ public class CreateCodeActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_create_code);
         ButterKnife.bind(this);
+
+        RelativeLayout flCamera = findViewById(R.id.fl_camera);
+        SurfaceView surfaceView = new SurfaceView(this);
+        flCamera.addView(surfaceView);
+        final Camera1Helper mCameraHelper = new Camera1Helper(surfaceView);
+        flCamera.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if(mCameraHelper != null) {
+                    mCameraHelper.switchCamera();
+                }
+            }
+        });
     }
 
     @OnClick({R.id.et_code_key, R.id.btn_create_code, R.id.btn_create_code_and_img, R.id.iv_2_code, R.id.iv_bar_code})

@@ -50,10 +50,6 @@ public class CommonScanActivity extends AppCompatActivity implements ScanListene
     RelativeLayout titleBar;
     @BindView(R.id.tv_scan_result)
     TextView tvScanResult;
-    @BindView(R.id.top_mask)
-    RelativeLayout topMask;
-    @BindView(R.id.left_mask)
-    ImageView leftMask;
     @BindView(R.id.scan_hint)
     TextView scanHint;
     @BindView(R.id.img_light)
@@ -115,12 +111,12 @@ public class CommonScanActivity extends AppCompatActivity implements ScanListene
         //构造出扫描管理器
         scanManager = new ScanManager(this, capturePreview, scanContainer, scanMode, this);
         scanManager.setPlayBeepAndVibrate(false, true);
-        if (getBaseContext().getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT) {
-            scanManager.setConfiguration(90);
-        } else {//如果是横屏
-            scanManager.setConfiguration(0);
-//            scanManager.setConfiguration(180);
-        }
+//        if (getBaseContext().getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT) {
+//            scanManager.setConfiguration(90);
+//        } else {//如果是横屏
+//            scanManager.setConfiguration(0);
+////            scanManager.setConfiguration(180);
+//        }
         scanContainer.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {

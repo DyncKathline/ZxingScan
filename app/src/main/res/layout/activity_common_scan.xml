@@ -13,78 +13,53 @@
     <org.dync.zxinglibrary.zxing.ViewfinderView
         android:id="@+id/scan_container"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"/>
+        android:layout_height="match_parent" />
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical">
 
-        <!-- 扫描框上面的布局 -->
         <RelativeLayout
-            android:id="@+id/top_mask"
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1"
-            android:background="@color/scan_bg">
-
-            <RelativeLayout
-                android:id="@+id/title_bar"
-                android:layout_width="fill_parent"
-                android:layout_height="52dp"
-                android:background="@color/colorPrimary">
-
-                <ImageView
-                    android:id="@+id/img_back"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_alignParentLeft="true"
-                    android:layout_centerVertical="true"
-                    android:background="@null"
-                    android:paddingLeft="12dp"
-                    android:paddingRight="20dp"
-                    android:src="@drawable/ic_my_returns_arrow" />
-
-                <TextView
-                    android:id="@+id/tv_title"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_centerHorizontal="true"
-                    android:layout_centerVertical="true"
-                    android:ellipsize="middle"
-                    android:singleLine="true"
-                    android:text="二维码扫描"
-                    android:textSize="18sp" />
-            </RelativeLayout>
-
-            <TextView
-                android:id="@+id/tv_scan_result"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_below="@id/title_bar"
-                android:layout_centerInParent="true"
-                android:layout_marginTop="20dp"
-                android:text="哈哈"
-                android:textColor="@android:color/white"
-                android:textSize="14sp"
-                android:visibility="gone" />
-
-        </RelativeLayout>
-
-        <!-- 扫描框中间的布局 -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1">
+            android:id="@+id/title_bar"
+            android:layout_width="fill_parent"
+            android:layout_height="52dp"
+            android:background="@color/colorPrimary">
 
             <ImageView
-                android:id="@+id/left_mask"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:background="@color/scan_bg" />
+                android:id="@+id/img_back"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentLeft="true"
+                android:layout_centerVertical="true"
+                android:background="@null"
+                android:paddingLeft="12dp"
+                android:paddingRight="20dp"
+                android:src="@drawable/ic_my_returns_arrow" />
 
-        </LinearLayout>
+            <TextView
+                android:id="@+id/tv_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerHorizontal="true"
+                android:layout_centerVertical="true"
+                android:ellipsize="middle"
+                android:singleLine="true"
+                android:text="二维码扫描"
+                android:textSize="18sp" />
+        </RelativeLayout>
+
+        <TextView
+            android:id="@+id/tv_scan_result"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/title_bar"
+            android:layout_centerInParent="true"
+            android:layout_marginTop="20dp"
+            android:text="哈哈"
+            android:textColor="@android:color/white"
+            android:textSize="14sp"
+            android:visibility="gone" />
 
         <!-- 扫描框底部的布局 -->
         <RelativeLayout
@@ -92,7 +67,7 @@
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1"
-            android:background="@color/scan_bg"
+            android:gravity="bottom"
             android:orientation="vertical"
             android:paddingBottom="16dp">
 
@@ -101,8 +76,8 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_centerHorizontal="true"
-                android:paddingBottom="20dp"
                 android:paddingTop="20dp"
+                android:paddingBottom="20dp"
                 android:text="@string/scan_allcode_hint"
                 android:textColor="#b4b4b4"
                 android:textSize="14sp" />
@@ -111,8 +86,8 @@
                 android:id="@+id/img_light"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_alignParentRight="true"
                 android:layout_below="@id/scan_hint"
+                android:layout_alignParentRight="true"
                 android:layout_marginRight="30dp"
                 android:background="@drawable/shouquan_qrcode_s_flashgun"
                 android:clickable="true" />
@@ -130,8 +105,8 @@
                 android:id="@+id/img_gallery"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_alignParentLeft="true"
                 android:layout_below="@id/scan_hint"
+                android:layout_alignParentLeft="true"
                 android:layout_marginLeft="30dp"
                 android:background="@drawable/shouquan_qrcode_g_gallery"
                 android:clickable="true"
@@ -151,9 +126,8 @@
                 android:text="再次扫描"
                 android:textColor="@android:color/white"
                 android:textSize="18sp"
-                android:visibility="visible"
+                android:visibility="visible" />
 
-                />
         </RelativeLayout>
 
     </LinearLayout>
