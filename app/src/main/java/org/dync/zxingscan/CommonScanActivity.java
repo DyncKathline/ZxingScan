@@ -50,6 +50,8 @@ public class CommonScanActivity extends AppCompatActivity implements ScanListene
     RelativeLayout titleBar;
     @BindView(R.id.tv_scan_result)
     TextView tvScanResult;
+    @BindView(R.id.img_switch_camera)
+    ImageView imgSwitchCamera;
     @BindView(R.id.scan_hint)
     TextView scanHint;
     @BindView(R.id.img_light)
@@ -107,16 +109,11 @@ public class CommonScanActivity extends AppCompatActivity implements ScanListene
         imgLight.setOnClickListener(this);
         btnRescan.setOnClickListener(this);
         imgExit.setOnClickListener(this);
+        imgSwitchCamera.setOnClickListener(this);
 
         //构造出扫描管理器
         scanManager = new ScanManager(this, capturePreview, scanContainer, scanMode, this);
         scanManager.setPlayBeepAndVibrate(false, true);
-        scanContainer.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                scanManager.switchCamera();
-            }
-        });
     }
 
     @Override
@@ -229,6 +226,9 @@ public class CommonScanActivity extends AppCompatActivity implements ScanListene
                 break;
             case R.id.img_back:
                 finish();
+                break;
+            case R.id.img_switch_camera:
+                scanManager.switchCamera();
                 break;
             default:
                 break;

@@ -33,6 +33,8 @@ import android.view.WindowManager;
 
 import com.google.zxing.PlanarYUVLuminanceSource;
 
+import org.dync.zxinglibrary.zxing.utils.GestureDetectorUtil;
+
 import java.io.IOException;
 import java.util.List;
 
@@ -145,10 +147,11 @@ public final class CameraManager {
 		Camera.Parameters parameters = mCamera.getParameters();
 		Log.i(TAG, ">>>>>>>setPreviewSize Preview size on screen: " + cameraResolution);
 		parameters.setPreviewSize(cameraResolution.x, cameraResolution.y);
-		parameters.setPictureSize(cameraPictureSize.x, cameraPictureSize.y);
+//		parameters.setPictureSize(cameraPictureSize.x, cameraPictureSize.y);
 		mCamera.setParameters(parameters);
 
 		mCamera.setPreviewDisplay(surfaceView.getHolder());
+		new GestureDetectorUtil(surfaceView, mCamera);
 	}
 
 	private static final int MIN_PREVIEW_PIXELS = 480 * 320; // normal screen
