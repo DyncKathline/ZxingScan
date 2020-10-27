@@ -432,16 +432,20 @@ public final class CameraManager {
 			result = (info.orientation - degrees + 360) % 360;
 		}
 		if (mContext.getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT) {
-			if(rotation == Surface.ROTATION_90) {
-				result = (result + 270)%360;
-			}else if(rotation == Surface.ROTATION_270) {
-				result = (result + 90)%360;
+			if (result != 90 && result != 270) {//正常手机都是竖屏旋转90或270度
+				if (rotation == Surface.ROTATION_90) {
+					result = (result + 270) % 360;
+				} else if (rotation == Surface.ROTATION_270) {
+					result = (result + 90) % 360;
+				}
 			}
-		}else {
-			if(rotation == Surface.ROTATION_0) {
-				result = (result + 90)%360;
-			}else if(rotation == Surface.ROTATION_180) {
-				result = (result + 270)%360;
+		}else {//正常手机都是横屏屏旋转0或180度
+			if (result != 0 && result != 180) {
+				if (rotation == Surface.ROTATION_0) {
+					result = (result + 90) % 360;
+				} else if (rotation == Surface.ROTATION_180) {
+					result = (result + 270) % 360;
+				}
 			}
 		}
 		String msg = "PORTRAIT is " + (mContext.getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT) + ", Camera[" + cameraId + "] rotation is " + info.orientation + ", device rotation is " + degrees + ", result is " + result;

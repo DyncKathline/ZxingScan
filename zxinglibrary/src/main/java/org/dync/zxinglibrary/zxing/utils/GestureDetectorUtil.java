@@ -1,5 +1,6 @@
 package org.dync.zxinglibrary.zxing.utils;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Rect;
 import android.graphics.RectF;
@@ -20,14 +21,13 @@ public class GestureDetectorUtil {
     private SurfaceView surfaceView;
     private float oldDist = 1f;
 
+    @SuppressLint("ClickableViewAccessibility")
     public GestureDetectorUtil(SurfaceView surfaceView, final Camera camera) {
         this.surfaceView = surfaceView;
         surfaceView.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
-                if (event.getPointerCount() == 1) {
-                    handleFocusMetering(event, camera);
-                } else {
+                if (event.getPointerCount() == 2) {
                     switch (event.getAction() & MotionEvent.ACTION_MASK) {
                         case MotionEvent.ACTION_POINTER_DOWN:
                             oldDist = getFingerSpacing(event);
