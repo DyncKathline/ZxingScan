@@ -8,12 +8,14 @@
     <SurfaceView
         android:id="@+id/capture_preview"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="wrap_content"
+        android:adjustViewBounds="true"
+        android:layout_centerInParent="true" />
 
     <org.dync.zxinglibrary.zxing.ViewfinderView
         android:id="@+id/scan_container"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="match_parent"/>
 
     <RelativeLayout
         android:layout_width="match_parent"
@@ -24,7 +26,7 @@
             android:id="@+id/title_bar"
             android:layout_width="fill_parent"
             android:layout_height="52dp"
-            android:background="@color/colorPrimary">
+            android:background="@color/colorPrimary_40">
 
             <ImageView
                 android:id="@+id/img_back"
