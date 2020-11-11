@@ -3,9 +3,9 @@ package org.dync.zxingscan;
 import android.Manifest;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.content.res.Configuration;
 import android.hardware.Camera;
 import android.support.v4.content.ContextCompat;
-import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Surface;
 import android.view.SurfaceHolder;
@@ -13,9 +13,6 @@ import android.view.SurfaceView;
 import android.view.WindowManager;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 
 public class Camera1Helper {
@@ -24,9 +21,7 @@ public class Camera1Helper {
     private Context mContext;
     private SurfaceView mSurfaceView;
     private int mFrontCameraId = -1;
-
     private int mBackCameraId = -1;
-
     private Camera mCamera;
     private int mCameraId = -1;
 
@@ -85,24 +80,15 @@ public class Camera1Helper {
             mCamera = Camera.open(cameraId);
             mCameraId = cameraId;
             Log.d(TAG, "Camera[" + cameraId + "] has been opened.");
-            assert mCamera != null;
-            mCamera.setDisplayOrientation(getCameraDisplayOrientation(mContext, cameraId, mCamera));
-//            if (mContext.getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT) {
-//                mCamera.setDisplayOrientation(90);
-//            } else {//如果是横屏
-//                mCamera.setDisplayOrientation(0);
-//            }
+            mCamera.setDisplayOrientation(getCameraDisplayOrientation(mContext, cameraId));
         }
     }
 
-    public int getCameraDisplayOrientation(Context activity, int cameraId, Camera camera) {
-        android.hardware.Camera.CameraInfo info =
-                new android.hardware.Camera.CameraInfo();
-        android.hardware.Camera.getCameraInfo(cameraId, info);
-
-//        int rotation = activity.getWindowManager().getDefaultDisplay()
-//                .getRotation();
-        WindowManager wm = (WindowManager) activity.getSystemService(Context.WINDOW_SERVICE);
+    public int getCameraDisplayOrientation(Context context, int cameraId) {
+        Camera.CameraInfo info =
+                new Camera.CameraInfo();
+        Camera.getCameraInfo(cameraId, info);
+        WindowManager wm = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
         int rotation = wm.getDefaultDisplay().getRotation();
         int degrees = 0;
         switch (rotation) {
@@ -127,6 +113,25 @@ public class Camera1Helper {
         } else {  // back-facing
             result = (info.orientation - degrees + 360) % 360;
         }
+        if (context.getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT) {
+            if (result != 90 && result != 270) {//正常手机都是竖屏旋转90或270度
+                if (rotation == Surface.ROTATION_90) {
+                    result = (result + 270) % 360;
+                } else if (rotation == Surface.ROTATION_270) {
+                    result = (result + 90) % 360;
+                }
+            }
+        }else {//正常手机都是横屏屏旋转0或180度
+            if (result != 0 && result != 180) {
+                if (rotation == Surface.ROTATION_0) {
+                    result = (result + 90) % 360;
+                } else if (rotation == Surface.ROTATION_180) {
+                    result = (result + 270) % 360;
+                }
+            }
+        }
+        String msg = "PORTRAIT is " + (context.getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT) + ", Camera[" + cameraId + "] rotation is " + info.orientation + ", device rotation is " + degrees + ", result is " + result;
+        Log.d(TAG, msg);
         return result;
     }
 
@@ -135,10 +140,10 @@ public class Camera1Helper {
      */
     private void closeCamera() {
         Camera camera = mCamera;
-        mCamera = null;
         if (camera != null) {
             camera.release();
             mCameraId = -1;
+            mCamera = null;
         }
     }
 
@@ -159,9 +164,7 @@ public class Camera1Helper {
      */
     private void setPreviewSize(Camera camera, int expectWidth, int expectHeight) {
         Camera.Parameters parameters = camera.getParameters();
-        Camera.Size size = calculatePerfectSize(parameters.getSupportedPreviewSizes(),
-                expectWidth, expectHeight, CalculateType.Lower);
-        size = getBestSize(expectWidth, expectHeight, parameters.getSupportedPreviewSizes());
+        Camera.Size size = findBestPreviewSize(parameters.getSupportedPreviewSizes(), expectWidth, expectHeight);
         parameters.setPreviewSize(size.width, size.height);
         camera.setParameters(parameters);
     }
@@ -175,40 +178,74 @@ public class Camera1Helper {
      */
     private void setPictureSize(Camera camera, int expectWidth, int expectHeight) {
         Camera.Parameters parameters = camera.getParameters();
-        Camera.Size size = calculatePerfectSize(parameters.getSupportedPictureSizes(),
-                expectWidth, expectHeight, CalculateType.Max);
-        size = getBestSize(expectWidth, expectHeight, parameters.getSupportedPictureSizes());
+        Camera.Size size = findBestPreviewSize(parameters.getSupportedPictureSizes(), expectWidth, expectHeight);
         parameters.setPictureSize(size.width, size.height);
         camera.setParameters(parameters);
     }
 
-
-    //获取与指定宽高相等或最接近的尺寸
-    private Camera.Size getBestSize(int targetWidth, int targetHeight, List<Camera.Size> sizeList) {
-        Camera.Size bestSize = null;
-        double targetRatio = (targetHeight * 1d / targetWidth);  //目标大小的宽高比
-        double minDiff = targetRatio;
-
-        for (Camera.Size size : sizeList) {
-            double supportedRatio = (size.width * 1d / size.height);
-            Log.d(TAG, String.format("系统支持的尺寸 : %d * %d ,    比例%f", size.width, size.height, supportedRatio));
+    private static final int MIN_PREVIEW_PIXELS = 480 * 320; // normal screen
+    private static final double MAX_ASPECT_DISTORTION = 0.05;
+    public Camera.Size findBestPreviewSize(List<Camera.Size> rawSupportedSizes, int expectWidth, int expectHeight) {
+        if (Log.isLoggable(TAG, Log.INFO)) {
+            StringBuilder previewSizesString = new StringBuilder();
+            for (Camera.Size size : rawSupportedSizes) {
+                previewSizesString.append(size.width).append('x').append(size.height).append(' ');
+            }
+            Log.i(TAG, "Supported preview sizes: " + previewSizesString);
         }
 
-        for (Camera.Size size : sizeList) {
-            if (size.width == targetHeight && size.height == targetWidth) {
-                bestSize = size;
-                break;
+        double screenAspectRatio;
+        if(expectWidth < expectHeight){
+            screenAspectRatio = expectWidth / (double) expectHeight;
+        }else{
+            screenAspectRatio = expectHeight / (double) expectWidth;
+        }
+        Log.i(TAG, "screenAspectRatio: " + screenAspectRatio);
+        // Find a suitable size, with max resolution
+        int maxResolution = 0;
+
+        Camera.Size maxResPreviewSize = null;
+        for (Camera.Size size : rawSupportedSizes) {
+            int realWidth = size.width;
+            int realHeight = size.height;
+            int resolution = realWidth * realHeight;
+            if (resolution < MIN_PREVIEW_PIXELS) {
+                continue;
             }
 
-            double supportedRatio = (size.width * 1d / size.height);
-            if (Math.abs(supportedRatio - targetRatio) < minDiff) {
-                minDiff = Math.abs(supportedRatio - targetRatio);
-                bestSize = size;
+            boolean isCandidatePortrait = realWidth < realHeight;
+            int maybeFlippedWidth = isCandidatePortrait ? realWidth: realHeight ;
+            int maybeFlippedHeight = isCandidatePortrait ? realHeight : realWidth;
+            Log.i(TAG, String.format("maybeFlipped:%d * %d",maybeFlippedWidth,maybeFlippedHeight));
+
+            double aspectRatio = maybeFlippedWidth / (double) maybeFlippedHeight;
+            Log.i(TAG, "aspectRatio: " + aspectRatio);
+            double distortion = Math.abs(aspectRatio - screenAspectRatio);
+            Log.i(TAG, "distortion: " + distortion);
+            if (distortion > MAX_ASPECT_DISTORTION) {
+                continue;
+            }
+
+            if (maybeFlippedWidth == expectWidth && maybeFlippedHeight == expectHeight) {
+                Log.i(TAG, "Found preview size exactly matching screen size: " + size);
+                return size;
+            }
+
+            // Resolution is suitable; record the one with max resolution
+            if (resolution > maxResolution) {
+                maxResolution = resolution;
+                maxResPreviewSize = size;
             }
         }
-        Log.d(TAG, String.format("目标尺寸 ：%d * %d ，   比例  %f", targetWidth, targetHeight, targetRatio));
-        Log.d(TAG, String.format("最优尺寸 ：%d * %d", bestSize != null ? bestSize.height : 0, bestSize != null ? bestSize.width : 0));
-        return bestSize;
+
+        // If no exact match, use largest preview size. This was not a great idea on older devices because
+        // of the additional computation needed. We're likely to get here on newer Android 4+ devices, where
+        // the CPU is much more powerful.
+        if (maxResPreviewSize == null) {
+            throw new IllegalStateException("Parameters contained no preview size!");
+        }
+        Log.i(TAG, "No suitable preview sizes, using default: " + maxResPreviewSize);
+        return maxResPreviewSize;
     }
 
     /**
@@ -272,7 +309,7 @@ public class Camera1Helper {
     /**
      * 拍照。
      */
-    public void takePicture() {
+    public void takePicture(final CameraHelper.PictureCallback callback) {
         Camera camera = mCamera;
         if (camera != null) {
             Camera.Parameters parameters = camera.getParameters();
@@ -280,12 +317,17 @@ public class Camera1Helper {
             camera.takePicture(null, null, new Camera.PictureCallback() {
                 @Override
                 public void onPictureTaken(byte[] data, Camera camera) {
+                    if(callback != null) {
+                        callback.onPictureTaken(data, camera);
+                    }
                     mCamera.startPreview();
-                    // 在使用完 Buffer 之后记得回收复用。
-//                    camera.addCallbackBuffer(data);
                 }
             });
         }
+    }
+
+    public interface PictureCallback {
+        void onPictureTaken(byte[] data, Camera camera);
     }
 
     public void switchCamera() {
@@ -302,16 +344,10 @@ public class Camera1Helper {
     }
 
     private void setCameraSize() {
-        DisplayMetrics mDisplayMetrics = mContext.getResources()
-                .getDisplayMetrics();
-        int mScreenWidth = mDisplayMetrics.widthPixels;
-        int mScreenHeight = mDisplayMetrics.heightPixels;
-//        int width = mScreenWidth;
-//        int height = mScreenHeight;
         int width = mSurfaceView.getWidth();
         int height = mSurfaceView.getHeight();
         setPreviewSize(mCamera, width, height);// 配置预览尺寸
-        setPictureSize(mCamera, width, height);
+//        setPictureSize(mCamera, width, height);
         setPreviewSurface(mSurfaceView.getHolder());// 配置预览 Surface
     }
 
@@ -349,157 +385,5 @@ public class Camera1Helper {
      */
     private boolean hasFrontCamera() {
         return mFrontCameraId != -1;
-    }
-
-    enum CalculateType {
-        Min,            // 最小
-        Max,            // 最大
-        Larger,         // 大一点
-        Lower,          // 小一点
-    }
-
-    /**
-     * 计算最完美的Size
-     *
-     * @param sizes
-     * @param expectWidth
-     * @param expectHeight
-     * @return
-     */
-    private static Camera.Size calculatePerfectSize(List<Camera.Size> sizes, int expectWidth,
-                                                    int expectHeight, CalculateType calculateType) {
-        sortList(sizes); // 根据宽度进行排序
-
-        // 根据当前期望的宽高判定
-        List<Camera.Size> bigEnough = new ArrayList<>();
-        List<Camera.Size> noBigEnough = new ArrayList<>();
-        for (Camera.Size size : sizes) {
-            if (size.height * expectWidth / expectHeight == size.width) {
-                if (size.width > expectWidth && size.height > expectHeight) {
-                    bigEnough.add(size);
-                } else {
-                    noBigEnough.add(size);
-                }
-            }
-        }
-        // 根据计算类型判断怎么如何计算尺寸
-        Camera.Size perfectSize = null;
-        switch (calculateType) {
-            // 直接使用最小值
-            case Min:
-                // 不大于期望值的分辨率列表有可能为空或者只有一个的情况，
-                // Collections.min会因越界报NoSuchElementException
-                if (noBigEnough.size() > 1) {
-                    perfectSize = Collections.min(noBigEnough, new CompareAreaSize());
-                } else if (noBigEnough.size() == 1) {
-                    perfectSize = noBigEnough.get(0);
-                }
-                break;
-
-            // 直接使用最大值
-            case Max:
-                // 如果bigEnough只有一个元素，使用Collections.max就会因越界报NoSuchElementException
-                // 因此，当只有一个元素时，直接使用该元素
-                if (bigEnough.size() > 1) {
-                    perfectSize = Collections.max(bigEnough, new CompareAreaSize());
-                } else if (bigEnough.size() == 1) {
-                    perfectSize = bigEnough.get(0);
-                }
-                break;
-
-            // 小一点
-            case Lower:
-                // 优先查找比期望尺寸小一点的，否则找大一点的，接受范围在0.8左右
-                if (noBigEnough.size() > 0) {
-                    Camera.Size size = Collections.max(noBigEnough, new CompareAreaSize());
-                    if (((float) size.width / expectWidth) >= 0.8
-                            && ((float) size.height / expectHeight) > 0.8) {
-                        perfectSize = size;
-                    }
-                } else if (bigEnough.size() > 0) {
-                    Camera.Size size = Collections.min(bigEnough, new CompareAreaSize());
-                    if (((float) expectWidth / size.width) >= 0.8
-                            && ((float) (expectHeight / size.height)) >= 0.8) {
-                        perfectSize = size;
-                    }
-                }
-                break;
-
-            // 大一点
-            case Larger:
-                // 优先查找比期望尺寸大一点的，否则找小一点的，接受范围在0.8左右
-                if (bigEnough.size() > 0) {
-                    Camera.Size size = Collections.min(bigEnough, new CompareAreaSize());
-                    if (((float) expectWidth / size.width) >= 0.8
-                            && ((float) (expectHeight / size.height)) >= 0.8) {
-                        perfectSize = size;
-                    }
-                } else if (noBigEnough.size() > 0) {
-                    Camera.Size size = Collections.max(noBigEnough, new CompareAreaSize());
-                    if (((float) size.width / expectWidth) >= 0.8
-                            && ((float) size.height / expectHeight) > 0.8) {
-                        perfectSize = size;
-                    }
-                }
-                break;
-        }
-        // 如果经过前面的步骤没找到合适的尺寸，则计算最接近expectWidth * expectHeight的值
-        if (perfectSize == null) {
-            Camera.Size result = sizes.get(0);
-            boolean widthOrHeight = false; // 判断存在宽或高相等的Size
-            // 辗转计算宽高最接近的值
-            for (Camera.Size size : sizes) {
-                // 如果宽高相等，则直接返回
-                if (size.width == expectWidth && size.height == expectHeight) {
-                    result = size;
-                    break;
-                }
-                // 仅仅是宽度相等，计算高度最接近的size
-                if (size.width == expectWidth) {
-                    widthOrHeight = true;
-                    if (Math.abs(result.height - expectHeight) > Math.abs(size.height - expectHeight)) {
-                        result = size;
-                        break;
-                    }
-                }
-                // 高度相等，则计算宽度最接近的Size
-                else if (size.height == expectHeight) {
-                    widthOrHeight = true;
-                    if (Math.abs(result.width - expectWidth) > Math.abs(size.width - expectWidth)) {
-                        result = size;
-                        break;
-                    }
-                }
-                // 如果之前的查找不存在宽或高相等的情况，则计算宽度和高度都最接近的期望值的Size
-                else if (!widthOrHeight) {
-                    if (Math.abs(result.width - expectWidth) > Math.abs(size.width - expectWidth)
-                            && Math.abs(result.height - expectHeight) > Math.abs(size.height - expectHeight)) {
-                        result = size;
-                    }
-                }
-            }
-            perfectSize = result;
-        }
-        return perfectSize;
-    }
-
-    /**
-     * 分辨率由大到小排序
-     *
-     * @param list
-     */
-    private static void sortList(List<Camera.Size> list) {
-        Collections.sort(list, new CompareAreaSize());
-    }
-
-    /**
-     * 比较器
-     */
-    private static class CompareAreaSize implements Comparator<Camera.Size> {
-        @Override
-        public int compare(Camera.Size pre, Camera.Size after) {
-            return Long.signum((long) pre.width * pre.height -
-                    (long) after.width * after.height);
-        }
     }
 }

@@ -1,14 +1,21 @@
 package org.dync.zxingscan;
 
+import android.content.ContentValues;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.Rect;
+import android.hardware.Camera;
+import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
+import android.provider.MediaStore;
 import android.support.v7.app.AppCompatActivity;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.SurfaceView;
 import android.view.View;
 import android.widget.Button;
@@ -19,6 +26,11 @@ import android.widget.Toast;
 
 import org.dync.zxinglibrary.utils.QRCode;
 import org.dync.zxinglibrary.zxing.encode.EncodingHandler;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -43,18 +55,66 @@ public class CreateCodeActivity extends AppCompatActivity {
         setContentView(R.layout.activity_create_code);
         ButterKnife.bind(this);
 
-        RelativeLayout flCamera = findViewById(R.id.fl_camera);
-        SurfaceView surfaceView = new SurfaceView(this);
-        flCamera.addView(surfaceView);
-        final Camera1Helper mCameraHelper = new Camera1Helper(surfaceView);
+        final RelativeLayout flCamera = findViewById(R.id.fl_camera);
+        final CameraHelper cameraHelper = new CameraHelper(this);
+        cameraHelper.startPreview();
         flCamera.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View v) {
-                if(mCameraHelper != null) {
-                    mCameraHelper.switchCamera();
-                }
+            public void onClick(View view) {
+                cameraHelper.takePicture(new CameraHelper.PictureCallback() {
+                    @Override
+                    public void onPictureTaken(final byte[] data, Camera camera) {
+                        flCamera.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                String SDCardPath = Environment.getExternalStorageDirectory().getPath() + File.separator;
+                                String filePath = SDCardPath + Environment.DIRECTORY_DCIM + File.separator + "Camera" + File.separator;
+                                String fileName = "picture.jpg";
+                                File file = new File(filePath,
+                                        fileName);
+                                OutputStream os = null;
+                                try {
+                                    os = new FileOutputStream(file);
+                                    os.write(data);
+                                    os.close();
+
+                                    ContentValues values = new ContentValues();
+                                    values.put(MediaStore.Images.Media.DATA, file.getAbsolutePath());
+                                    values.put(MediaStore.Images.Media.MIME_TYPE, "image/jpg");
+                                    Uri insert = getContentResolver().insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
+                                    Intent intent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
+                                    intent.setData(insert);
+                                    sendBroadcast(intent);
+                                    Toast.makeText(flCamera.getContext(), "保存路径：" + file.getAbsolutePath(), Toast.LENGTH_SHORT)
+                                            .show();
+                                } catch (IOException e) {
+                                    Log.w("CreateCodeActivity", "Cannot write to " + file, e);
+                                } finally {
+                                    if (os != null) {
+                                        try {
+                                            os.close();
+                                        } catch (IOException e) {
+                                            // Ignore
+                                        }
+                                    }
+                                }
+                            }
+                        });
+                    }
+                });
             }
         });
+//        SurfaceView surfaceView = new SurfaceView(this);
+//        flCamera.addView(surfaceView);
+//        final Camera1Helper mCameraHelper = new Camera1Helper(surfaceView);
+//        flCamera.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View v) {
+//                if(mCameraHelper != null) {
+//                    mCameraHelper.switchCamera();
+//                }
+//            }
+//        });
     }
 
     @OnClick({R.id.et_code_key, R.id.btn_create_code, R.id.btn_create_code_and_img, R.id.iv_2_code, R.id.iv_bar_code})
