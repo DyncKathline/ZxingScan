@@ -1,10 +1,14 @@
 package org.dync.zxinglibrary.zxing;
 
+import android.Manifest;
 import android.app.Activity;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.SurfaceHolder;
@@ -49,7 +53,6 @@ public class ScanManager {
     boolean isOpenLight = false;
     boolean playBeep = true;
     boolean vibrate = true;
-    int orientation = -1;
 
     private int scanMode;//扫描模型（条形，二维码，全部）
 
@@ -74,10 +77,6 @@ public class ScanManager {
         this.vibrate = vibrate;
     }
 
-    public void setConfiguration(int orientation) {
-        this.orientation = orientation;
-    }
-
     public void onResume() {
         // CameraManager must be initialized here, not in onCreate(). This is
         // necessary because we don't
@@ -99,7 +98,11 @@ public class ScanManager {
 				}
 				if (!isHasSurface) {
 					isHasSurface = true;
-					initCamera();
+                    if(ContextCompat.checkSelfPermission(activity, Manifest.permission.CAMERA)!= PackageManager.PERMISSION_GRANTED){
+                        ActivityCompat.requestPermissions(activity, new String[]{Manifest.permission.CAMERA}, 1);
+                    }else{
+                        initCamera();
+                    }
 				}
 			}
 
@@ -114,7 +117,25 @@ public class ScanManager {
 			}
 		});
 
+		if(isHasSurface) {
+            initCamera();
+        }
         inactivityTimer.onResume();
+    }
+
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        Log.d(TAG,"onRequestPermissionsResult");
+        if (requestCode == 1){
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED){
+                initCamera();
+                if (cameraManager != null){
+                    cameraManager.startPreview();
+                }
+
+            } else {
+                listener.scanError(new Exception("相机打开出错，请检查是否被禁止了该权限！"));
+            }
+        }
     }
 
     public void onPause() {
@@ -140,7 +161,6 @@ public class ScanManager {
             return;
         }
         try {
-            cameraManager.setConfiguration(orientation);
             cameraManager.openDriver(surfaceView);
             // Creating the handler starts the preview, which can also throw a
             // RuntimeException.

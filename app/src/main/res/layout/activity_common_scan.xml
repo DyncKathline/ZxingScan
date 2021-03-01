@@ -1,21 +1,36 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/capture_container"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@android:color/white">
 
-    <SurfaceView
-        android:id="@+id/capture_preview"
-        android:layout_width="match_parent"
+    <org.dync.zxingscan.RatioLayout
+        android:layout_width="300dp"
         android:layout_height="wrap_content"
-        android:adjustViewBounds="true"
-        android:layout_centerInParent="true" />
+        android:layout_centerInParent="true"
+        app:ratio="w,4:3">
 
-    <org.dync.zxinglibrary.zxing.ViewfinderView
-        android:id="@+id/scan_container"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"/>
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <SurfaceView
+                android:id="@+id/capture_preview"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:adjustViewBounds="true"
+                android:layout_centerInParent="true" />
+
+            <org.dync.zxinglibrary.zxing.ViewfinderView
+                android:id="@+id/scan_container"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"/>
+
+        </RelativeLayout>
+
+    </org.dync.zxingscan.RatioLayout>
 
     <RelativeLayout
         android:layout_width="match_parent"

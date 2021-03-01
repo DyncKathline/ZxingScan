@@ -33,10 +33,16 @@ import android.view.WindowManager;
 
 import com.google.zxing.PlanarYUVLuminanceSource;
 
+import org.dync.zxinglibrary.zxing.size.AspectRatio;
+import org.dync.zxinglibrary.zxing.size.Size;
+import org.dync.zxinglibrary.zxing.size.SizeMap;
 import org.dync.zxinglibrary.zxing.utils.GestureDetectorUtil;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 /**
  * This object wraps the Camera service object and expects to be the only one talking to it. The
@@ -74,7 +80,14 @@ public final class CameraManager {
 	Point cameraResolution;
 	Point cameraPictureSize;
 
-	private int orientation = -1;
+	private final SizeMap mPreviewSizes = new SizeMap();
+
+	private final SizeMap mPictureSizes = new SizeMap();
+
+	private AspectRatio mAspectRatio;
+
+	private final AspectRatio DEFAULT_ASPECT_RATIO = AspectRatio.of(4, 3);
+
 	/**
 	 * Preview frames are delivered here, which we pass on to the registered handler. Make sure to
 	 * clear the handler so it will only receive one message.
@@ -85,10 +98,6 @@ public final class CameraManager {
 		this.mContext = context;
 		initCameraInfo();
 		mCameraId = getCameraId();
-	}
-
-	public synchronized void setConfiguration(int orientation) {
-		this.orientation = orientation;
 	}
 
 	/**
@@ -105,32 +114,29 @@ public final class CameraManager {
 			if (mCamera == null) {
 				throw new IOException("Camera.open() failed to return object from driver");
 			}
-			if(orientation == -1) {
-				int degrees = getCameraDisplayOrientation(mContext, mCameraId);
-				mCamera.setDisplayOrientation(degrees);
-			}else {
-				mCamera.setDisplayOrientation(orientation);
-			}
+			int degrees = getCameraDisplayOrientation(mContext, mCameraId);
+			mCamera.setDisplayOrientation(degrees);
 		}
 
 		if (!initialized) {
-			initialized = true;
+//			initialized = true;
 
 			Camera.Parameters parameters = mCamera.getParameters();
-			WindowManager manager = (WindowManager) mContext.getSystemService(Context.WINDOW_SERVICE);
-			Display display = manager.getDefaultDisplay();
-
-			Point theScreenResolution = new Point();
-			display.getSize(theScreenResolution);
-			screenResolution = theScreenResolution;
-
-			//initFromCameraParameters
-			Log.i(TAG, ">>>>>>>Screen resolution in current orientation: " + screenResolution);
-			cameraResolution = findBestPreviewSize(parameters.getSupportedPreviewSizes(), screenResolution);
-			cameraPictureSize = findBestPreviewSize(parameters.getSupportedPictureSizes(), cameraResolution);
-			Log.i(TAG, ">>>>>>>Camera resolution: " + cameraResolution);
-			Log.i(TAG, ">>>>>>>setPreviewSize Preview size on screen: " + cameraResolution);
-			previewCallback = new PreviewCallback(cameraResolution);
+			// Supported preview sizes
+			mPreviewSizes.clear();
+			for (Camera.Size size : parameters.getSupportedPreviewSizes()) {
+				mPreviewSizes.add(new Size(size.width, size.height));
+			}
+			// Supported picture sizes;
+			mPictureSizes.clear();
+			for (Camera.Size size : parameters.getSupportedPictureSizes()) {
+				mPictureSizes.add(new Size(size.width, size.height));
+			}
+			// AspectRatio
+			if (mAspectRatio == null) {
+				mAspectRatio = DEFAULT_ASPECT_RATIO;
+			}
+			adjustCameraParameters();
 
 			if (requestedFramingRectWidth > 0 && requestedFramingRectHeight > 0) {
 				setManualFramingRect(requestedFramingRectWidth, requestedFramingRectHeight);
@@ -139,81 +145,89 @@ public final class CameraManager {
 			}
 		}
 
-		Camera.Parameters parameters = mCamera.getParameters();
-		Log.i(TAG, ">>>>>>>setPreviewSize Preview size on screen: " + cameraResolution);
-		parameters.setPreviewSize(cameraResolution.x, cameraResolution.y);
-//		parameters.setPictureSize(cameraPictureSize.x, cameraPictureSize.y);
-		mCamera.setParameters(parameters);
-
 		mCamera.setPreviewDisplay(surfaceView.getHolder());
 		new GestureDetectorUtil(surfaceView, mCamera);
 	}
 
-	private static final int MIN_PREVIEW_PIXELS = 480 * 320; // normal screen
-	private static final double MAX_ASPECT_DISTORTION = 0.05;
-	public Point findBestPreviewSize(List<Camera.Size> rawSupportedSizes, final Point screenResolution) {
-		if (Log.isLoggable(TAG, Log.INFO)) {
-			StringBuilder previewSizesString = new StringBuilder();
-			for (Camera.Size size : rawSupportedSizes) {
-				previewSizesString.append(size.width).append('x').append(size.height).append(' ');
-			}
-			Log.i(TAG, "Supported preview sizes: " + previewSizesString);
-		}
-
-		double screenAspectRatio;
-		if(screenResolution.x < screenResolution.y){
-			screenAspectRatio = screenResolution.x / (double) screenResolution.y;
-		}else{
-			screenAspectRatio = screenResolution.y / (double) screenResolution.x;
-		}
-		Log.i(TAG, "screenAspectRatio: " + screenAspectRatio);
-		// Find a suitable size, with max resolution
-		int maxResolution = 0;
-
-		Camera.Size maxResPreviewSize = null;
-		for (Camera.Size size : rawSupportedSizes) {
-			int realWidth = size.width;
-			int realHeight = size.height;
-			int resolution = realWidth * realHeight;
-			if (resolution < MIN_PREVIEW_PIXELS) {
-				continue;
-			}
-
-			boolean isCandidatePortrait = realWidth < realHeight;
-			int maybeFlippedWidth = isCandidatePortrait ? realWidth: realHeight ;
-			int maybeFlippedHeight = isCandidatePortrait ? realHeight : realWidth;
-			Log.i(TAG, String.format("maybeFlipped:%d * %d",maybeFlippedWidth,maybeFlippedHeight));
-
-			double aspectRatio = maybeFlippedWidth / (double) maybeFlippedHeight;
-			Log.i(TAG, "aspectRatio: " + aspectRatio);
-			double distortion = Math.abs(aspectRatio - screenAspectRatio);
-			Log.i(TAG, "distortion: " + distortion);
-			if (distortion > MAX_ASPECT_DISTORTION) {
-				continue;
-			}
-
-			if (maybeFlippedWidth == screenResolution.x && maybeFlippedHeight == screenResolution.y) {
-				Point exactPoint = new Point(realWidth, realHeight);
-				Log.i(TAG, "Found preview size exactly matching screen size: " + exactPoint);
-				return exactPoint;
-			}
-
-			// Resolution is suitable; record the one with max resolution
-			if (resolution > maxResolution) {
-				maxResolution = resolution;
-				maxResPreviewSize = size;
+	private AspectRatio chooseAspectRatio() {
+		AspectRatio r = null;
+		for (AspectRatio ratio : mPreviewSizes.ratios()) {
+			r = ratio;
+			if (ratio.equals(DEFAULT_ASPECT_RATIO)) {
+				return ratio;
 			}
 		}
+		return r;
+	}
 
-		// If no exact match, use largest preview size. This was not a great idea on older devices because
-		// of the additional computation needed. We're likely to get here on newer Android 4+ devices, where
-		// the CPU is much more powerful.
-		if (maxResPreviewSize == null) {
-			throw new IllegalStateException("Parameters contained no preview size!");
+	void adjustCameraParameters() {
+		Camera.Parameters parameters = mCamera.getParameters();
+		if(mAspectRatio.ratio() == 0) {
+			mPreviewSizes.ratios().retainAll(mPictureSizes.ratios());
+			Set<AspectRatio> ratios = mPreviewSizes.ratios();
+			SortedSet<AspectRatio> sortedSet = new TreeSet<>();
+			sortedSet.addAll(ratios);
+			mAspectRatio = sortedSet.last();
 		}
-		Point defaultSize = new Point(maxResPreviewSize.width, maxResPreviewSize.height);
-		Log.i(TAG, "No suitable preview sizes, using default: " + defaultSize);
-		return defaultSize;
+		SortedSet<Size> sizes = mPreviewSizes.sizes(mAspectRatio);
+		if (sizes == null) { // Not supported
+			mAspectRatio = chooseAspectRatio();
+			sizes = mPreviewSizes.sizes(mAspectRatio);
+		}
+		Size size = chooseOptimalSize(sizes);
+
+		// Always re-apply camera parameters
+		// Largest picture size in this ratio
+		final Size pictureSize = mPictureSizes.sizes(mAspectRatio).last();
+		if (previewing) {
+			stopPreview();
+		}
+
+		Point theScreenResolution = new Point();
+		theScreenResolution.x = surfaceView.getMeasuredWidth();
+		theScreenResolution.y = surfaceView.getMeasuredHeight();
+		screenResolution = theScreenResolution;
+		cameraResolution = new Point(size.getWidth(), size.getHeight());
+		cameraPictureSize = new Point(pictureSize.getWidth(), pictureSize.getHeight());
+//		Log.i(TAG, ">>>>>>>Camera screenResolution: " + screenResolution);
+//		Log.i(TAG, ">>>>>>>Camera cameraResolution: " + cameraResolution);
+//		Log.i(TAG, ">>>>>>>Camera cameraPictureSize: " + cameraPictureSize);
+		previewCallback = new PreviewCallback(cameraResolution);
+
+		parameters.setPreviewSize(size.getWidth(), size.getHeight());
+		parameters.setPictureSize(pictureSize.getWidth(), pictureSize.getHeight());
+//		setAutoFocusInternal(mAutoFocus);
+//		setFlashInternal(mFlash);
+		mCamera.setParameters(parameters);
+		if (!previewing) {
+			startPreview();
+		}
+	}
+
+	private Size chooseOptimalSize(SortedSet<Size> sizes) {
+		if (!(surfaceView.getWidth() != 0 && surfaceView.getHeight() != 0)) { // Not yet laid out
+			return sizes.first(); // Return the smallest size
+		}
+		int desiredWidth;
+		int desiredHeight;
+		final int surfaceWidth = surfaceView.getWidth();
+		final int surfaceHeight = surfaceView.getHeight();
+		if (isLandscape()) {
+			desiredWidth = surfaceHeight;
+			desiredHeight = surfaceWidth;
+		} else {
+			desiredWidth = surfaceWidth;
+			desiredHeight = surfaceHeight;
+		}
+		Size result = null;
+		for (Size size : sizes) { // Iterate from small to large
+			if (desiredWidth <= size.getWidth() && desiredHeight <= size.getHeight()) {
+				return size;
+
+			}
+			result = size;
+		}
+		return result;
 	}
 
 	/**
@@ -295,9 +309,9 @@ public final class CameraManager {
 	}
 
 	public int getCameraDisplayOrientation(Context activity, int cameraId) {
-		android.hardware.Camera.CameraInfo info =
-				new android.hardware.Camera.CameraInfo();
-		android.hardware.Camera.getCameraInfo(cameraId, info);
+		Camera.CameraInfo info =
+				new Camera.CameraInfo();
+		Camera.getCameraInfo(cameraId, info);
 		WindowManager wm = (WindowManager) activity.getSystemService(Context.WINDOW_SERVICE);
 		int rotation = wm.getDefaultDisplay().getRotation();
 		int degrees = 0;
@@ -343,6 +357,15 @@ public final class CameraManager {
 		String msg = "PORTRAIT is " + (mContext.getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT) + ", Camera[" + cameraId + "] rotation is " + info.orientation + ", device rotation is " + degrees + ", result is " + result;
 		Log.d(TAG, msg);
 		return result;
+	}
+
+	/**
+	 * Test if the supplied orientation is in landscape.
+	 *
+	 * @return True if in landscape, false if portrait
+	 */
+	private boolean isLandscape() {
+		return mContext.getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE;
 	}
 
 	public boolean isZoomSupported() {
@@ -493,8 +516,8 @@ public final class CameraManager {
 			int width = findDesiredDimensionInRange(screenResolution.x, MIN_FRAME_WIDTH, MAX_FRAME_WIDTH);
 			int height = width;
 
-            int leftOffset;
-            int topOffset;
+			int leftOffset;
+			int topOffset;
 			leftOffset = (screenResolution.x - width) / 2;
 			topOffset = (screenResolution.y - height) / 2;
 			framingRect = new Rect(leftOffset, topOffset, leftOffset + width, topOffset + height);

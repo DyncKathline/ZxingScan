@@ -1,5 +1,6 @@
 package org.dync.zxingscan;
 
+import android.Manifest;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
@@ -11,6 +12,7 @@ import android.graphics.Color;
 import android.graphics.drawable.BitmapDrawable;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.view.Surface;
 import android.view.SurfaceView;
@@ -31,6 +33,8 @@ import org.dync.zxinglibrary.zxing.ScanManager;
 import org.dync.zxinglibrary.zxing.ViewfinderView;
 import org.dync.zxinglibrary.zxing.decode.DecodeThread;
 import org.dync.zxinglibrary.zxing.decode.Utils;
+
+import java.util.List;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -135,6 +139,12 @@ public class CommonScanActivity extends AppCompatActivity implements ScanListene
     }
 
     @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        scanManager.onRequestPermissionsResult(requestCode, permissions, grantResults);
+    }
+
+    @Override
     public void scanResult(Result rawResult, Bundle bundle) {
         //扫描成功后，扫描器不会再连续扫描，如需连续扫描，调用reScan()方法。
         //scanManager.reScan();
@@ -213,7 +223,24 @@ public class CommonScanActivity extends AppCompatActivity implements ScanListene
     public void onClick(View v) {
         switch (v.getId()) {
             case R.id.img_gallery:
-                showPictures(PHOTOREQUESTCODE);
+                PermissionUtil.getInstance().with(CommonScanActivity.this).requestPermissions(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, new PermissionUtil.PermissionListener() {
+                    @Override
+                    public void onGranted() {
+                        showPictures(PHOTOREQUESTCODE);
+                    }
+
+                    @Override
+                    public void onDenied(List<String> deniedPermission) {
+                        Intent intent = PermissionUtil.PermissionSettingPage.getSmartPermissionIntent(mContext, deniedPermission);
+                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                        mContext.startActivity(intent);
+                    }
+
+                    @Override
+                    public void onShouldShowRationale(List<String> deniedPermission) {
+//                        finishAnimActivity();
+                    }
+                });
                 break;
             case R.id.img_light:
                 scanManager.switchLight();

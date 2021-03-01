@@ -3,7 +3,6 @@
     package="org.dync.zxingscan">
 
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.CAMERA" />
 
     <uses-feature android:name="android.hardware.camera" />
@@ -27,7 +26,7 @@
             </intent-filter>
         </activity>
         <activity android:name=".CommonScanActivity"
-            android:screenOrientation="portrait"/>
+            android:screenOrientation="landscape"/>
         <activity android:name=".CreateCodeActivity"
             android:screenOrientation="landscape"></activity>
     </application>
