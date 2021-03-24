@@ -3,4 +3,11 @@
 
     <uses-permission android:name="android.permission.VIBRATE" />
 
+    <application android:allowBackup="true">
+
+        <activity android:name=".utils.PreferencesActivity"
+            android:stateNotNeeded="true"/>
+
+    </application>
+
 </manifest>

@@ -16,13 +16,16 @@ import com.yanzhenjie.permission.PermissionListener;
 import com.yanzhenjie.permission.Rationale;
 import com.yanzhenjie.permission.RationaleListener;
 
-import org.dync.zxinglibrary.utils.Constant;
+import org.dync.zxinglibrary.ScanManager;
+import org.dync.zxinglibrary.utils.PreferencesActivity;
 
 import java.util.List;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
+
+import static org.dync.zxingscan.CommonScanActivity.REQUEST_SCAN_MODE;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -49,7 +52,7 @@ public class MainActivity extends AppCompatActivity {
         ButterKnife.bind(this);
     }
 
-    @OnClick({R.id.create_code, R.id.scan_2code, R.id.scan_bar_code, R.id.scan_code})
+    @OnClick({R.id.create_code, R.id.scan_2code, R.id.scan_bar_code, R.id.scan_code, R.id.config})
     public void onViewClicked(View view) {
         Intent intent;
         switch (view.getId()) {
@@ -59,13 +62,16 @@ public class MainActivity extends AppCompatActivity {
 //                requestPermission(mContext, CommonScanActivity.class, -1);
                 break;
             case R.id.scan_2code: //扫描二维码
-                requestPermission(mContext, CommonScanActivity.class, Constant.REQUEST_SCAN_MODE_QRCODE_MODE);
+                requestPermission(mContext, CommonScanActivity.class, ScanManager.SCANTYPE_QR);
                 break;
             case R.id.scan_bar_code://扫描条形码
-                requestPermission(mContext, CommonScanActivity.class, Constant.REQUEST_SCAN_MODE_BARCODE_MODE);
+                requestPermission(mContext, CommonScanActivity.class, ScanManager.SCANTYPE_BARCODE);
                 break;
             case R.id.scan_code://扫描条形码或者二维码
-                requestPermission(mContext, CommonScanActivity.class, Constant.REQUEST_SCAN_MODE_ALL_MODE);
+                requestPermission(mContext, CommonScanActivity.class, ScanManager.SCANTYPE_ALL);
+                break;
+            case R.id.config:
+                startActivity(new Intent(this, PreferencesActivity.class));
                 break;
         }
     }
@@ -106,7 +112,7 @@ public class MainActivity extends AppCompatActivity {
     private static void startActivity(Context context, Class<?> cls, final int mode) {
         Intent intent = new Intent(context, cls);
         if(mode != -1) {
-            intent.putExtra(Constant.REQUEST_SCAN_MODE, mode);
+            intent.putExtra(REQUEST_SCAN_MODE, mode);
         }
         context.startActivity(intent);
     }

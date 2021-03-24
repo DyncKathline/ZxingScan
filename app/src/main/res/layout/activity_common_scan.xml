@@ -1,143 +1,105 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/capture_container"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:background="@android:color/white">
+    android:layout_height="match_parent">
 
     <SurfaceView
-        android:id="@+id/capture_preview"
+        android:id="@+id/surface_view"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
-    <org.dync.zxinglibrary.zxing.ViewfinderView
-        android:id="@+id/scan_container"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+    <org.dync.zxinglibrary.view.ViewfinderView
+        android:id="@+id/viewfinder_view"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true" />
 
+    <TextView
+        android:id="@+id/tv_scan_result"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:text="哈哈"
+        android:textColor="@android:color/white"
+        android:textSize="14sp"
+        android:visibility="gone" />
+
+    <ImageView
+        android:id="@+id/img_switch_camera"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:layout_marginRight="20dp"
+        android:layout_alignParentRight="true"
+        android:src="@mipmap/btn_switch_camera"/>
+
+    <!-- 扫描框底部的布局 -->
     <RelativeLayout
+        android:id="@+id/bottom_mask"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:orientation="vertical">
-
-        <RelativeLayout
-            android:id="@+id/title_bar"
-            android:layout_width="fill_parent"
-            android:layout_height="52dp"
-            android:background="@color/colorPrimary">
-
-            <ImageView
-                android:id="@+id/img_back"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignParentLeft="true"
-                android:layout_centerVertical="true"
-                android:background="@null"
-                android:paddingLeft="12dp"
-                android:paddingRight="20dp"
-                android:src="@drawable/ic_my_returns_arrow" />
-
-            <TextView
-                android:id="@+id/tv_title"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_centerHorizontal="true"
-                android:layout_centerVertical="true"
-                android:ellipsize="middle"
-                android:singleLine="true"
-                android:text="二维码扫描"
-                android:textSize="18sp" />
-        </RelativeLayout>
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:orientation="vertical"
+        android:paddingBottom="16dp">
 
         <TextView
-            android:id="@+id/tv_scan_result"
+            android:id="@+id/scan_hint"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_below="@id/title_bar"
-            android:layout_centerInParent="true"
-            android:layout_marginTop="20dp"
-            android:text="哈哈"
-            android:textColor="@android:color/white"
-            android:textSize="14sp"
-            android:visibility="gone" />
+            android:layout_centerHorizontal="true"
+            android:paddingTop="20dp"
+            android:paddingBottom="20dp"
+            android:text="@string/scan_allcode_hint"
+            android:textColor="#b4b4b4"
+            android:textSize="14sp" />
 
-        <ImageView
-            android:id="@+id/img_switch_camera"
+        <TextView
+            android:id="@+id/img_light"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_below="@id/title_bar"
-            android:layout_marginTop="20dp"
-            android:layout_marginRight="20dp"
+            android:layout_below="@id/scan_hint"
             android:layout_alignParentRight="true"
-            android:src="@drawable/btn_switch_camera"/>
+            android:layout_marginRight="30dp"
+            android:background="@drawable/shouquan_qrcode_s_flashgun"
+            android:clickable="true" />
 
-        <!-- 扫描框底部的布局 -->
-        <RelativeLayout
-            android:id="@+id/bottom_mask"
-            android:layout_width="match_parent"
+        <TextView
+            android:id="@+id/img_exit"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_alignParentBottom="true"
-            android:orientation="vertical"
-            android:paddingBottom="16dp">
+            android:layout_below="@id/scan_hint"
+            android:layout_centerHorizontal="true"
+            android:background="@drawable/shouquan_qrcode_ic_back"
+            android:clickable="true" />
 
-            <TextView
-                android:id="@+id/scan_hint"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_centerHorizontal="true"
-                android:paddingTop="20dp"
-                android:paddingBottom="20dp"
-                android:text="@string/scan_allcode_hint"
-                android:textColor="#b4b4b4"
-                android:textSize="14sp" />
+        <TextView
+            android:id="@+id/img_gallery"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/scan_hint"
+            android:layout_alignParentLeft="true"
+            android:layout_marginLeft="30dp"
+            android:background="@drawable/shouquan_qrcode_g_gallery"
+            android:clickable="true"
 
-            <TextView
-                android:id="@+id/img_light"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_below="@id/scan_hint"
-                android:layout_alignParentRight="true"
-                android:layout_marginRight="30dp"
-                android:background="@drawable/shouquan_qrcode_s_flashgun"
-                android:clickable="true" />
+            android:textSize="20sp" />
 
-            <TextView
-                android:id="@+id/img_exit"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_below="@id/scan_hint"
-                android:layout_centerHorizontal="true"
-                android:background="@drawable/shouquan_qrcode_ic_back"
-                android:clickable="true" />
-
-            <TextView
-                android:id="@+id/img_gallery"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_below="@id/scan_hint"
-                android:layout_alignParentLeft="true"
-                android:layout_marginLeft="30dp"
-                android:background="@drawable/shouquan_qrcode_g_gallery"
-                android:clickable="true"
-
-                android:textSize="20sp" />
-
-            <Button
-                android:id="@+id/btn_rescan"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_below="@id/img_gallery"
-                android:layout_centerHorizontal="true"
-                android:layout_gravity="center_horizontal"
-                android:layout_marginTop="20dp"
-                android:background="@drawable/rescan_shape_button"
-                android:padding="10dp"
-                android:text="再次扫描"
-                android:textColor="@android:color/white"
-                android:textSize="18sp"
-                android:visibility="visible" />
-
-        </RelativeLayout>
+        <Button
+            android:id="@+id/btn_rescan"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/img_gallery"
+            android:layout_centerHorizontal="true"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="20dp"
+            android:background="@drawable/rescan_shape_button"
+            android:padding="10dp"
+            android:text="再次扫描"
+            android:textColor="@android:color/white"
+            android:textSize="18sp"
+            android:visibility="visible" />
 
     </RelativeLayout>
 

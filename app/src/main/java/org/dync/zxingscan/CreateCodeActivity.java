@@ -17,9 +17,10 @@ import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.Toast;
 
-import org.dync.zxinglibrary.utils.QRCode;
-import org.dync.zxinglibrary.zxing.encode.EncodingHandler;
+import com.google.zxing.BarcodeFormat;
 
+import org.dync.zxinglibrary.encode.EncodeHelper;
+import org.dync.zxinglibrary.utils.QRCode;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
@@ -86,9 +87,9 @@ public class CreateCodeActivity extends AppCompatActivity {
     private Bitmap createBarCode(String key) {
         Bitmap qrCode = null;
         try {
-            qrCode = EncodingHandler.createBarCode(key, 600, 300);
-            Bitmap bitmap = EncodingHandler.addCode(qrCode, key, 40, Color.BLACK, 20);
-            ivBarCode.setImageBitmap(bitmap);
+            EncodeHelper helper = new EncodeHelper();
+            qrCode = helper.encodeCode(key, BarcodeFormat.CODE_128, 400, 100);
+            ivBarCode.setImageBitmap(qrCode);
         } catch (Exception e) {
             Toast.makeText(this, "输入的内容条形码不支持！", Toast.LENGTH_SHORT).show();
             e.printStackTrace();
@@ -103,16 +104,7 @@ public class CreateCodeActivity extends AppCompatActivity {
      */
     private Bitmap create2Code(String key) {
         Bitmap qrCode = null;
-//        try {
-//            qrCode = EncodingHandler.create2Code(key, 500);
-//            iv2Code.setImageBitmap(qrCode);
-//        } catch (WriterException e) {
-//            e.printStackTrace();
-//        } catch (UnsupportedEncodingException e) {
-//            e.printStackTrace();
-//        }
-//            qrCode = QRCode.createQRCode(key);
-        qrCode = QRCode.createQRCodeWithLogo2(key, 500, QRCode.drawableToBitmap(getResources().getDrawable(R.drawable.head)));
+        qrCode = QRCode.createQRCodeWithLogo2(key, 500, QRCode.drawableToBitmap(getResources().getDrawable(R.drawable.icon)));
         iv2Code.setImageBitmap(qrCode);
         return qrCode;
     }
@@ -123,7 +115,7 @@ public class CreateCodeActivity extends AppCompatActivity {
     private Bitmap getHeadBitmap(int size) {
         try {
             // 这里采用从asset中加载图片abc.jpg
-            Bitmap portrait = BitmapFactory.decodeResource(getResources(), R.drawable.head);
+            Bitmap portrait = BitmapFactory.decodeResource(getResources(), R.drawable.icon);
             // 对原有图片压缩显示大小
             Matrix mMatrix = new Matrix();
             float width = portrait.getWidth();

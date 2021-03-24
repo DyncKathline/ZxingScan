@@ -6,13 +6,10 @@ import android.content.Intent;
 import android.content.res.Configuration;
 import android.database.Cursor;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.Color;
-import android.graphics.drawable.BitmapDrawable;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.support.v7.app.AppCompatActivity;
-import android.view.Surface;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.Window;
@@ -24,13 +21,12 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.zxing.Result;
+import com.google.zxing.ResultPoint;
 
-import org.dync.zxinglibrary.utils.Constant;
-import org.dync.zxinglibrary.zxing.ScanListener;
-import org.dync.zxinglibrary.zxing.ScanManager;
-import org.dync.zxinglibrary.zxing.ViewfinderView;
-import org.dync.zxinglibrary.zxing.decode.DecodeThread;
-import org.dync.zxinglibrary.zxing.decode.Utils;
+import org.dync.zxinglibrary.ScanManager;
+import org.dync.zxinglibrary.callback.ScanListener;
+import org.dync.zxinglibrary.decod.Utils;
+import org.dync.zxinglibrary.view.ViewfinderView;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -38,16 +34,10 @@ import butterknife.ButterKnife;
 public class CommonScanActivity extends AppCompatActivity implements ScanListener, View.OnClickListener {
 
     static final String TAG = CommonScanActivity.class.getSimpleName();
-    @BindView(R.id.capture_preview)
-    SurfaceView capturePreview;
-    @BindView(R.id.scan_container)
-    ViewfinderView scanContainer;
-    @BindView(R.id.img_back)
-    ImageView imgBack;
-    @BindView(R.id.tv_title)
-    TextView tvTitle;
-    @BindView(R.id.title_bar)
-    RelativeLayout titleBar;
+    @BindView(R.id.surface_view)
+    SurfaceView surfaceView;
+    @BindView(R.id.viewfinder_view)
+    ViewfinderView viewfinderView;
     @BindView(R.id.tv_scan_result)
     TextView tvScanResult;
     @BindView(R.id.img_switch_camera)
@@ -64,12 +54,11 @@ public class CommonScanActivity extends AppCompatActivity implements ScanListene
     Button btnRescan;
     @BindView(R.id.bottom_mask)
     RelativeLayout bottomMask;
-    @BindView(R.id.capture_container)
-    RelativeLayout captureContainer;
 
     private Context mContext;
     private Activity mActivity;
     private ScanManager scanManager;
+    public static final String REQUEST_SCAN_MODE = "REQUEST_SCAN_MODE";
     final int PHOTOREQUESTCODE = 1111;
     private int scanMode;//扫描模型（条形，二维码，全部）
 
@@ -84,36 +73,40 @@ public class CommonScanActivity extends AppCompatActivity implements ScanListene
         mContext = this;
         mActivity = this;
         ButterKnife.bind(this);
-        scanMode = getIntent().getIntExtra(Constant.REQUEST_SCAN_MODE, Constant.REQUEST_SCAN_MODE_ALL_MODE);
+        scanMode = getIntent().getIntExtra(REQUEST_SCAN_MODE, ScanManager.SCANTYPE_ALL);
 
         initView();
     }
 
     void initView() {
-        switch (scanMode) {
-            case DecodeThread.BARCODE_MODE:
-                tvTitle.setText(R.string.scan_barcode_title);
-                scanHint.setText(R.string.scan_barcode_hint);
-                break;
-            case DecodeThread.QRCODE_MODE:
-                tvTitle.setText(R.string.scan_qrcode_title);
-                scanHint.setText(R.string.scan_qrcode_hint);
-                break;
-            case DecodeThread.ALL_MODE:
-                tvTitle.setText(R.string.scan_allcode_title);
-                scanHint.setText(R.string.scan_allcode_hint);
-                break;
-        }
         imgGallery.setOnClickListener(this);
-        imgBack.setOnClickListener(this);
         imgLight.setOnClickListener(this);
         btnRescan.setOnClickListener(this);
         imgExit.setOnClickListener(this);
         imgSwitchCamera.setOnClickListener(this);
 
         //构造出扫描管理器
-        scanManager = new ScanManager(this, capturePreview, scanContainer, scanMode, this);
+        configViewFinderView(viewfinderView);
+        scanManager = new ScanManager(this, surfaceView, viewfinderView, scanMode, this);
         scanManager.setPlayBeepAndVibrate(false, true);
+        scanManager.onCreate();
+    }
+
+    private void configViewFinderView(ViewfinderView viewfinderView) {
+        viewfinderView.setAnimatorDuration(1500);
+        viewfinderView.setConorColor(Color.GREEN);
+        viewfinderView.setCornorLength(60);
+        viewfinderView.setLineColors(new int[]{Color.argb(10, 155, 255, 60),
+                Color.argb(30, 155, 255, 60),
+                Color.argb(50, 155, 255, 60),
+                Color.argb(70, 155, 255, 60),
+                Color.argb(90, 155, 255, 60),
+                Color.argb(70, 155, 255, 60),
+                Color.argb(50, 155, 255, 60),
+                Color.argb(30, 155, 255, 60),
+                Color.argb(10, 155, 255, 60),
+                Color.argb(5, 155, 255, 60),});
+        viewfinderView.setLinePercents(new float[]{0.1f, 0.2f, 0.3f, 0.4f, 0.5f, 0.6f, 0.7f, 0.8f, 0.9f, 1f});
     }
 
     @Override
@@ -121,11 +114,7 @@ public class CommonScanActivity extends AppCompatActivity implements ScanListene
         super.onResume();
         scanManager.onResume();
         btnRescan.setVisibility(View.INVISIBLE);
-        scanContainer.setVisibility(View.VISIBLE);
-        scanContainer.setCameraManager(scanManager.getCameraManager());
-        scanContainer.setLaserColor(getResources().getColor(R.color.colorAccent));
-        scanContainer.setScanningLine(((BitmapDrawable) getResources()
-                .getDrawable(R.mipmap.pic_scan_3scanlight)).getBitmap());
+        viewfinderView.setVisibility(View.VISIBLE);
     }
 
     @Override
@@ -135,7 +124,13 @@ public class CommonScanActivity extends AppCompatActivity implements ScanListene
     }
 
     @Override
-    public void scanResult(Result rawResult, Bundle bundle) {
+    protected void onDestroy() {
+        super.onDestroy();
+        scanManager.onDestroy();
+    }
+
+    @Override
+    public void scanResult(Result rawResult, Bitmap bitmap) {
         //扫描成功后，扫描器不会再连续扫描，如需连续扫描，调用reScan()方法。
         //scanManager.reScan();
 //		Toast.makeText(that, "result="+rawResult.getText(), Toast.LENGTH_LONG).show();
@@ -143,17 +138,11 @@ public class CommonScanActivity extends AppCompatActivity implements ScanListene
         if (!scanManager.isScanning()) { //如果当前不是在扫描状态
             //设置再次扫描按钮出现
             btnRescan.setVisibility(View.VISIBLE);
-            scanContainer.setVisibility(View.VISIBLE);
-            Bitmap barcode = null;
-            byte[] compressedBitmap = bundle.getByteArray(DecodeThread.BARCODE_BITMAP);
-            if (compressedBitmap != null) {
-                barcode = BitmapFactory.decodeByteArray(compressedBitmap, 0, compressedBitmap.length, null);
-                barcode = barcode.copy(Bitmap.Config.ARGB_8888, true);
-            }
-            scanContainer.drawResultBitmap(barcode);
+            viewfinderView.setVisibility(View.VISIBLE);
+            viewfinderView.drawResultBitmap(bitmap);
         }
         btnRescan.setVisibility(View.VISIBLE);
-        scanContainer.setVisibility(View.VISIBLE);
+        viewfinderView.setVisibility(View.VISIBLE);
         tvScanResult.setVisibility(View.VISIBLE);
         tvScanResult.setText("结果：" + rawResult.getText());
     }
@@ -161,9 +150,9 @@ public class CommonScanActivity extends AppCompatActivity implements ScanListene
     void startScan() {
         if (btnRescan.getVisibility() == View.VISIBLE) {
             btnRescan.setVisibility(View.INVISIBLE);
-            scanContainer.setVisibility(View.VISIBLE);
-            scanContainer.drawResultBitmap(null);
-            scanManager.reScan();
+            viewfinderView.setVisibility(View.VISIBLE);
+            scanManager.restartPreviewAfterDelay(0);
+            scanManager.drawViewfinder();
         }
     }
 
@@ -174,6 +163,11 @@ public class CommonScanActivity extends AppCompatActivity implements ScanListene
         if (e.getMessage() != null && e.getMessage().startsWith("相机")) {
 
         }
+    }
+
+    @Override
+    public void foundPossibleResultPoint(ResultPoint point) {
+
     }
 
     public void showPictures(int requestCode) {
@@ -223,9 +217,6 @@ public class CommonScanActivity extends AppCompatActivity implements ScanListene
                 break;
             case R.id.btn_rescan://再次开启扫描
                 startScan();
-                break;
-            case R.id.img_back:
-                finish();
                 break;
             case R.id.img_switch_camera:
                 scanManager.switchCamera();

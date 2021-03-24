@@ -1,4 +1,5 @@
-<?xml version="1.0" encoding="UTF-8"?><!--
+<?xml version="1.0" encoding="utf-8"?>
+<!--
  Copyright (C) 2008 ZXing authors
 
  Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,8 +15,15 @@
  limitations under the License.
  -->
 <resources>
-    <color name="possible_result_points">#c0ffbd21</color>
-    <color name="result_view">#b0000000</color>
-    <color name="viewfinder_mask">#00000000</color>
-    <color name="capture_text_cover_bg">#99535353</color>
+  <color name="contents_text">#ff000000</color>
+  <color name="encode_view">#ffffffff</color>
+  <color name="possible_result_points">#c0ffbd21</color> <!-- Android standard ICS color -->
+  <color name="result_minor_text">#ffc0c0c0</color>
+  <color name="result_points">#c099cc00</color> <!-- Android standard ICS color -->
+  <color name="result_text">#ffffffff</color>
+  <color name="result_view">#b0000000</color>
+  <color name="status_text">#ffffffff</color>
+  <color name="transparent">#00000000</color>
+  <color name="viewfinder_laser">#ffcc0000</color> <!-- Android standard ICS color -->
+  <color name="viewfinder_mask">#60000000</color>
 </resources>
