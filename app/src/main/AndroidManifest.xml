@@ -26,9 +26,9 @@
             </intent-filter>
         </activity>
         <activity android:name=".CommonScanActivity"
-            android:screenOrientation="portrait"/>
+            android:screenOrientation="landscape"/>
         <activity android:name=".CreateCodeActivity"
-            android:screenOrientation="portrait"></activity>
+            android:screenOrientation="landscape"></activity>
     </application>
 
 </manifest>

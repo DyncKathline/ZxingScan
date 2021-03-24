@@ -77,36 +77,37 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void requestPermission(final Context context, final Class<?> cls, final int mode) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            AndPermission.with(mActivity)
-                    .requestCode(REQUEST_CODE_PERMISSION)
-                    .permission(Manifest.permission.CAMERA, Manifest.permission.READ_EXTERNAL_STORAGE)
-                    .callback(new PermissionListener() {
-                        @Override
-                        public void onSucceed(int requestCode, @NonNull List<String> grantPermissions) {
-                            startActivity(context, cls, mode);
-                        }
-
-                        @Override
-                        public void onFailed(int requestCode, @NonNull List<String> deniedPermissions) {
-                            // 用户否勾选了不再提示并且拒绝了权限，那么提示用户到设置中授权。
-                            if (AndPermission.hasAlwaysDeniedPermission(mActivity, deniedPermissions)) {
-                                // 第一种：用默认的提示语。
-                                AndPermission.defaultSettingDialog(mActivity, REQUEST_CODE_SETTING).show();
-                            }
-                        }
-                    })
-                    .rationale(new RationaleListener() {
-                        @Override
-                        public void showRequestPermissionRationale(int requestCode, Rationale rationale) {
-                            // 这里使用自定义对话框，如果不想自定义，用AndPermission默认对话框：
-                            AndPermission.rationaleDialog(mContext, rationale).show();
-                        }
-                    })
-                    .start();
-        }else {
-            startActivity(context, cls, mode);
-        }
+        startActivity(context, cls, mode);
+//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+//            AndPermission.with(mActivity)
+//                    .requestCode(REQUEST_CODE_PERMISSION)
+//                    .permission(Manifest.permission.CAMERA, Manifest.permission.READ_EXTERNAL_STORAGE)
+//                    .callback(new PermissionListener() {
+//                        @Override
+//                        public void onSucceed(int requestCode, @NonNull List<String> grantPermissions) {
+//                            startActivity(context, cls, mode);
+//                        }
+//
+//                        @Override
+//                        public void onFailed(int requestCode, @NonNull List<String> deniedPermissions) {
+//                            // 用户否勾选了不再提示并且拒绝了权限，那么提示用户到设置中授权。
+//                            if (AndPermission.hasAlwaysDeniedPermission(mActivity, deniedPermissions)) {
+//                                // 第一种：用默认的提示语。
+//                                AndPermission.defaultSettingDialog(mActivity, REQUEST_CODE_SETTING).show();
+//                            }
+//                        }
+//                    })
+//                    .rationale(new RationaleListener() {
+//                        @Override
+//                        public void showRequestPermissionRationale(int requestCode, Rationale rationale) {
+//                            // 这里使用自定义对话框，如果不想自定义，用AndPermission默认对话框：
+//                            AndPermission.rationaleDialog(mContext, rationale).show();
+//                        }
+//                    })
+//                    .start();
+//        }else {
+//            startActivity(context, cls, mode);
+//        }
     }
 
     private static void startActivity(Context context, Class<?> cls, final int mode) {

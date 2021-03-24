@@ -7,4 +7,5 @@
     <color name="scan_bg">#7f000000</color>
     <color name="line_color">#cccccc</color>
     <color name="edittext_line_color">#000000</color>
+    <color name="colorPrimary_40">#663F51B5</color>
 </resources>
