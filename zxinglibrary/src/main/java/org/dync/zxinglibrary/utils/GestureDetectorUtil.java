@@ -91,8 +91,6 @@ public class GestureDetectorUtil {
             Log.i(TAG, "metering areas not supported");
         }
         final String currentFocusMode = params.getFocusMode();
-        params.setFocusMode(Camera.Parameters.FOCUS_MODE_MACRO);
-        camera.setParameters(params);
         camera.autoFocus(new Camera.AutoFocusCallback() {
             @Override
             public void onAutoFocus(boolean success, Camera camera) {

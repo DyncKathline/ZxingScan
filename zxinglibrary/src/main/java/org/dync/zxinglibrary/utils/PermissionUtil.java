@@ -1,4 +1,4 @@
-package org.dync.zxingscan;
+package org.dync.zxinglibrary.utils;
 
 import android.Manifest;
 import android.app.AlertDialog;
@@ -6,8 +6,6 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.content.pm.PermissionGroupInfo;
-import android.content.pm.PermissionInfo;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -18,6 +16,8 @@ import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.content.ContextCompat;
+
+import org.dync.zxinglibrary.R;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -54,26 +54,14 @@ public class PermissionUtil {
         return this;
     }
 
-    public void showDialogTips(String permission, DialogInterface.OnClickListener onDenied) {
+    public void showDialogTips(List<String> permission, DialogInterface.OnClickListener onDenied) {
         if(fragment.getContext() == null) {
             return;
-        }
-        PackageManager packageManager = fragment.getContext().getPackageManager();
-        String permissionName;
-        try {
-            PermissionInfo permissionInfo = packageManager.getPermissionInfo(permission, 0);
-            assert permissionInfo.group != null;
-            PermissionGroupInfo permissionGroupInfo =
-                    packageManager.getPermissionGroupInfo(permissionInfo.group, 0);
-            permissionName = (String) permissionGroupInfo.loadLabel(packageManager);
-        } catch (PackageManager.NameNotFoundException e) {
-            e.printStackTrace();
-            permissionName = "";
         }
         AlertDialog alertDialog = new AlertDialog.Builder(fragment.getContext()).setTitle("权限被禁用").setMessage(
                 String.format("您拒绝了相关权限，无法正常使用本功能。请前往 设置->应用管理->%s->权限管理中启用 %s 权限",
                         fragment.getContext().getString(R.string.app_name),
-                        permissionName
+                        listToString(permission)
                 )).setCancelable(false).
                 setNegativeButton("返回", onDenied).
                 setPositiveButton("去设置", new DialogInterface.OnClickListener() {
@@ -89,6 +77,19 @@ public class PermissionUtil {
                 }).create();
         alertDialog.show();
 
+    }
+
+    public static String listToString(List<String> list) {
+        StringBuilder builder = new StringBuilder();
+        int size = list.size();
+        for (int i = 0; i < size; i++) {
+            if(i < size - 1) {
+                builder.append(list.get(i)).append(",");
+            }else {
+                builder.append(list.get(i));
+            }
+        }
+        return builder.toString();
     }
 
     private PermissionFragment getPermissionsFragment(FragmentActivity activity) {

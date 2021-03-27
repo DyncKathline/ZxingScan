@@ -16,7 +16,9 @@
 
 package org.dync.zxinglibrary;
 
+import android.Manifest;
 import android.app.Activity;
+import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
@@ -25,6 +27,7 @@ import android.graphics.Paint;
 import android.os.Handler;
 import android.os.Message;
 import android.preference.PreferenceManager;
+import android.support.v4.app.FragmentActivity;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.SurfaceHolder;
@@ -51,10 +54,12 @@ import org.dync.zxinglibrary.hardware.BeepManager;
 import org.dync.zxinglibrary.utils.BitmapUtils;
 import org.dync.zxinglibrary.utils.GestureDetectorUtil;
 import org.dync.zxinglibrary.utils.InactivityTimer;
+import org.dync.zxinglibrary.utils.PermissionUtil;
 import org.dync.zxinglibrary.utils.PreferencesActivity;
 import org.dync.zxinglibrary.view.ViewfinderView;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -78,7 +83,7 @@ public class ScanManager {
     private ViewfinderView viewfinderView;
     private boolean hasSurface;
 
-    private Activity activity;
+    private FragmentActivity activity;
 
 
     private InactivityTimer inactivityTimer;
@@ -87,6 +92,7 @@ public class ScanManager {
     private SurfaceView surfaceView;
     private SurfaceHolder.Callback callback;
     private int scanMode;
+    private boolean isCheckPermission = false;
 
     public ScanListener scanListener;
     public final static int SCANTYPE_QR = 1;
@@ -95,22 +101,29 @@ public class ScanManager {
 
     public ScanManager() {}
 
-    public ScanManager(Activity activity, SurfaceView surfaceView, ViewfinderView viewfinderView, int scanMode, ScanListener listener) {
+    public ScanManager(FragmentActivity activity, SurfaceView surfaceView, ViewfinderView viewfinderView, int scanMode, ScanListener listener) {
         this.activity = activity;
         this.surfaceView = surfaceView;
         this.viewfinderView = viewfinderView;
         this.scanMode = scanMode;
         this.scanListener = listener;
         setScanType(scanMode);
+        onCreate();
     }
 
     public void onCreate() {
         Window window = activity.getWindow();
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         hasSurface = false;
-        inactivityTimer = new InactivityTimer(activity);
-        beepManager = new BeepManager(activity);
-        ambientLightManager = new AmbientLightManager(activity);
+        if(inactivityTimer == null) {
+            inactivityTimer = new InactivityTimer(activity);
+        }
+        if(beepManager == null) {
+            beepManager = new BeepManager(activity);
+        }
+        if(ambientLightManager == null) {
+            ambientLightManager = new AmbientLightManager(activity);
+        }
     }
 
     public void onResume() {
@@ -133,7 +146,7 @@ public class ScanManager {
                     }
                     if (!hasSurface) {
                         hasSurface = true;
-                        initCamera(holder);
+                        requirePermission();
                     }
                 }
 
@@ -151,15 +164,43 @@ public class ScanManager {
         }
     }
 
+    private void requirePermission() {
+        PermissionUtil.getInstance().with(activity).requestPermissions(new String[]{Manifest.permission.CAMERA,
+                Manifest.permission.VIBRATE}, new PermissionUtil.PermissionListener() {
+            @Override
+            public void onGranted() {
+                isCheckPermission = true;
+                initCamera(surfaceView.getHolder());
+            }
+
+            @Override
+            public void onDenied(List<String> deniedPermission) {
+                PermissionUtil.getInstance().showDialogTips( deniedPermission, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        activity.finish();
+                    }
+                });
+            }
+
+            @Override
+            public void onShouldShowRationale(List<String> deniedPermission) {
+                requirePermission();
+            }
+        });
+    }
+
     public void onPause() {
-        if (handler != null) {
-            handler.quitSynchronously();
-            handler = null;
+        if(!isCheckPermission) {
+            if (handler != null) {
+                handler.quitSynchronously();
+                handler = null;
+            }
+            cameraManager.closeDriver();
         }
         inactivityTimer.onPause();
         ambientLightManager.stop();
         beepManager.close();
-        cameraManager.closeDriver();
         if (!hasSurface) {
             if (surfaceView != null) surfaceView.getHolder().removeCallback(callback);
         }
@@ -233,7 +274,7 @@ public class ScanManager {
         }
     }
 
-    private void initCamera(SurfaceHolder surfaceHolder) {
+    private synchronized void initCamera(SurfaceHolder surfaceHolder) {
         if (surfaceHolder == null) {
             throw new IllegalStateException("No SurfaceHolder provided");
         }
@@ -248,6 +289,9 @@ public class ScanManager {
             if (handler == null) {
                 handler = new CaptureActivityHandler(this, null, null, null, cameraManager);
             }
+            //解决授权camera权限扫描不出现问题
+//            restartPreviewAfterDelay(0);
+            drawViewfinder();
         } catch (IOException ioe) {
             Log.w(TAG, ioe);
             scanListener.scanError(ioe);
@@ -315,7 +359,7 @@ public class ScanManager {
         this.viewfinderView = viewfinderView;
     }
 
-    public void setActivity(Activity activity) {
+    public void setActivity(FragmentActivity activity) {
         this.activity = activity;
     }
 

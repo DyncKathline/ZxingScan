@@ -111,22 +111,22 @@ public class CommonScanActivity extends AppCompatActivity implements ScanListene
 
     @Override
     public void onResume() {
-        super.onResume();
         scanManager.onResume();
+        super.onResume();
         btnRescan.setVisibility(View.INVISIBLE);
         viewfinderView.setVisibility(View.VISIBLE);
     }
 
     @Override
     public void onPause() {
-        super.onPause();
         scanManager.onPause();
+        super.onPause();
     }
 
     @Override
     protected void onDestroy() {
-        super.onDestroy();
         scanManager.onDestroy();
+        super.onDestroy();
     }
 
     @Override
