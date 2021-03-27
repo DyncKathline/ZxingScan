@@ -191,7 +191,7 @@ public class ScanManager {
     }
 
     public void onPause() {
-        if(!isCheckPermission) {
+        if(isCheckPermission) {
             if (handler != null) {
                 handler.quitSynchronously();
                 handler = null;
