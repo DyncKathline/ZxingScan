@@ -8,10 +8,11 @@ import android.graphics.ImageFormat;
 import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
 import android.opengl.GLES11Ext;
-import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.view.Surface;
 import android.view.WindowManager;
+
+import androidx.core.content.ContextCompat;
 
 import java.io.IOException;
 

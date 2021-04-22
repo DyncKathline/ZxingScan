@@ -1,4 +1,4 @@
-package org.dync.zxinglibrary.utils;
+package com.kathline.barcode;
 
 import android.Manifest;
 import android.app.AlertDialog;
@@ -17,8 +17,6 @@ import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentActivity;
 import androidx.fragment.app.FragmentManager;
-
-import org.dync.zxinglibrary.R;
 
 import java.util.ArrayList;
 import java.util.List;

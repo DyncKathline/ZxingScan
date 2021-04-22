@@ -1,1 +1,2 @@
+include ':barcode'
 include ':app', ':zxinglibrary'
