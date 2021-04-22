@@ -25,6 +25,7 @@ import androidx.annotation.NonNull;
 import com.google.android.gms.tasks.Task;
 import com.google.mlkit.vision.barcode.Barcode;
 import com.google.mlkit.vision.barcode.BarcodeScanner;
+import com.google.mlkit.vision.barcode.BarcodeScannerOptions;
 import com.google.mlkit.vision.barcode.BarcodeScanning;
 import com.google.mlkit.vision.common.InputImage;
 import com.kathline.barcode.GraphicOverlay;
@@ -53,7 +54,11 @@ public class BarcodeScannerProcessor extends VisionProcessorBase<List<Barcode>> 
 
   public BarcodeScannerProcessor(Context context, MLKit mlKit) {
     super(context);
-    barcodeScanner = BarcodeScanning.getClient();
+    if(mlKit.options != null) {
+      barcodeScanner = BarcodeScanning.getClient(mlKit.options);
+    }else {
+      barcodeScanner = BarcodeScanning.getClient();
+    }
     this.mlKit = mlKit;
   }
 

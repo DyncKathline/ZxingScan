@@ -11,6 +11,8 @@ import androidx.lifecycle.LifecycleObserver;
 import androidx.lifecycle.OnLifecycleEvent;
 
 import com.google.mlkit.vision.barcode.Barcode;
+import com.google.mlkit.vision.barcode.BarcodeScannerOptions;
+import com.google.mlkit.vision.barcode.BarcodeScanning;
 import com.kathline.barcode.barcodescanner.BarcodeScannerProcessor;
 
 import java.io.IOException;
@@ -24,6 +26,7 @@ public class MLKit implements LifecycleObserver {
     private CameraSourcePreview preview;
     private GraphicOverlay graphicOverlay;
     private boolean isAnalyze = true;
+    public BarcodeScannerOptions options;
 
     public MLKit(FragmentActivity activity, CameraSourcePreview preview, GraphicOverlay graphicOverlay) {
         this.activity = activity;
@@ -111,6 +114,10 @@ public class MLKit implements LifecycleObserver {
 
     public boolean isAnalyze() {
         return isAnalyze;
+    }
+
+    public void setBarcodeFormats(BarcodeScannerOptions options) {
+        this.options = options;
     }
 
     public void switchCamera(boolean isFront) {

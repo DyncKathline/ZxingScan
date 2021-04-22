@@ -1,15 +1,7 @@
 package org.dync.zxingscan;
 
-import android.app.AlertDialog;
 import android.content.Context;
-import android.content.DialogInterface;
-import android.content.Intent;
-import android.graphics.Bitmap;
-import android.graphics.Canvas;
-import android.graphics.Color;
-import android.net.Uri;
 import android.os.Bundle;
-import android.provider.Settings;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
@@ -24,6 +16,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
 import com.google.mlkit.vision.barcode.Barcode;
+import com.google.mlkit.vision.barcode.BarcodeScannerOptions;
 import com.kathline.barcode.CameraSourcePreview;
 import com.kathline.barcode.GraphicOverlay;
 import com.kathline.barcode.MLKit;
@@ -63,6 +56,14 @@ public class LivePreviewActivity extends AppCompatActivity
         facingSwitch.setOnCheckedChangeListener(this);
 
         mlKit = new MLKit(this, preview, graphicOverlay);
+        //仅识别二维码
+        BarcodeScannerOptions options =
+                new BarcodeScannerOptions.Builder()
+                        .setBarcodeFormats(
+                                Barcode.FORMAT_QR_CODE,
+                                Barcode.FORMAT_AZTEC)
+                        .build();
+        mlKit.setBarcodeFormats(options);
         mlKit.setOnScanListener(new MLKit.OnScanListener() {
             @Override
             public void onSuccess(List<Barcode> barcodes, @NonNull GraphicOverlay graphicOverlay) {
@@ -89,12 +90,12 @@ public class LivePreviewActivity extends AppCompatActivity
                                 ImageView ivDialogContent = customDialog.findViewById(R.id.ivDialogContent);
 
                                 tvDialogContent.setText(stringBuilder.toString());
-                                Bitmap bitmap = loadBitmapFromView(graphicOverlay);
-                                ivDialogContent.setImageBitmap(bitmap);
+                                ivDialogContent.setVisibility(View.GONE);
                                 btnDialogCancel.setOnClickListener(new View.OnClickListener() {
                                     @Override
                                     public void onClick(View v) {
                                         customDialog.dismiss();
+                                        finish();
                                     }
                                 });
                                 btnDialogOK.setOnClickListener(new View.OnClickListener() {
@@ -114,26 +115,6 @@ public class LivePreviewActivity extends AppCompatActivity
 
             }
         });
-    }
-
-    public static Bitmap loadBitmapFromView(View v) {
-        v.setDrawingCacheEnabled(true);
-        v.setDrawingCacheQuality(View.DRAWING_CACHE_QUALITY_HIGH);
-        v.setDrawingCacheBackgroundColor(Color.WHITE);
-
-        int w = v.getWidth();
-        int h = v.getHeight();
-
-        Bitmap bmp = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
-        Canvas c = new Canvas(bmp);
-
-        c.drawColor(Color.WHITE);
-        /** 如果不设置canvas画布为白色，则生成透明 */
-
-        v.layout(0, 0, w, h);
-        v.draw(c);
-
-        return bmp;
     }
 
     @Override
