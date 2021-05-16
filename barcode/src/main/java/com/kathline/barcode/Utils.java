@@ -1,4 +1,4 @@
-package org.dync.zxinglibrary.decod;
+package com.kathline.barcode;
 
 import android.annotation.SuppressLint;
 import android.content.ContentUris;

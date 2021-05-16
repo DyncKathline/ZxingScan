@@ -39,12 +39,7 @@ import androidx.annotation.ColorRes;
 import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
 
-
-/**
- * @author <a href="mailto:jenly1314@gmail.com">Jenly</a>
- */
 public class ViewfinderView extends View {
-
 
     /**
      * 画笔

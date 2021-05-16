@@ -2,7 +2,15 @@ package com.kathline.barcode;
 
 import android.Manifest;
 import android.content.DialogInterface;
+import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.Point;
+import android.graphics.Rect;
+import android.hardware.Camera;
+import android.text.TextUtils;
 import android.util.Log;
+import android.view.Window;
+import android.view.WindowManager;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.FragmentActivity;
@@ -10,10 +18,17 @@ import androidx.lifecycle.Lifecycle;
 import androidx.lifecycle.LifecycleObserver;
 import androidx.lifecycle.OnLifecycleEvent;
 
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
 import com.google.mlkit.vision.barcode.Barcode;
+import com.google.mlkit.vision.barcode.BarcodeScanner;
 import com.google.mlkit.vision.barcode.BarcodeScannerOptions;
 import com.google.mlkit.vision.barcode.BarcodeScanning;
+import com.google.mlkit.vision.common.InputImage;
+import com.kathline.barcode.barcodescanner.BarcodeGraphic;
 import com.kathline.barcode.barcodescanner.BarcodeScannerProcessor;
+import com.kathline.barcode.hardware.BeepManager;
 
 import java.io.IOException;
 import java.util.List;
@@ -28,6 +43,12 @@ public class MLKit implements LifecycleObserver {
     private boolean isAnalyze = true;
     public BarcodeScannerOptions options;
 
+    private BeepManager beepManager;
+    boolean isOpenLight = false;
+    boolean playBeep = true;
+    boolean vibrate = true;
+    private BarcodeScanner barcodeScanner;
+
     public MLKit(FragmentActivity activity, CameraSourcePreview preview, GraphicOverlay graphicOverlay) {
         this.activity = activity;
         this.preview = preview;
@@ -37,6 +58,11 @@ public class MLKit implements LifecycleObserver {
     }
 
     public void onCreate() {
+        Window window = activity.getWindow();
+        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        if(beepManager == null) {
+            beepManager = new BeepManager(activity);
+        }
         requirePermission();
     }
 
@@ -59,6 +85,62 @@ public class MLKit implements LifecycleObserver {
         if (cameraSource != null) {
             cameraSource.release();
         }
+    }
+
+    public synchronized void scanningImage(String photoPath) {
+        if (TextUtils.isEmpty(photoPath)) {
+            onScanListener.onFail(2, new Exception("photo url is null!"));
+        }
+        Bitmap bitmap = BitmapUtils.decodeBitmapFromPath(photoPath, 600, 600, false);
+
+        detectInImage(bitmap, graphicOverlay);
+    }
+
+    private void detectInImage(Bitmap bitmap, final GraphicOverlay graphicOverlay) {
+        InputImage image = InputImage.fromBitmap(bitmap, 0);
+        if(options != null) {
+            barcodeScanner = BarcodeScanning.getClient(options);
+        }else {
+            barcodeScanner = BarcodeScanning.getClient();
+        }
+        // Or, to specify the formats to recognize:
+        // BarcodeScanner scanner = BarcodeScanning.getClient(options);
+        // [END get_detector]
+
+        // [START run_detector]
+        Task<List<Barcode>> result = barcodeScanner.process(image)
+                .addOnSuccessListener(new OnSuccessListener<List<Barcode>>() {
+                    @Override
+                    public void onSuccess(List<Barcode> barcodes) {
+                        if (barcodes.isEmpty()) {
+                            Log.v(TAG, "No barcode has been detected");
+                        }
+                        for (int i = 0; i < barcodes.size(); ++i) {
+                            Barcode barcode = barcodes.get(i);
+                            graphicOverlay.add(new BarcodeGraphic(graphicOverlay, barcode));
+                        }
+                        if(isAnalyze()) {
+                            if(onScanListener != null) {
+                                playBeepAndVibrate();
+                                onScanListener.onSuccess(barcodes, graphicOverlay);
+                            }
+                        }else {
+                            if(onScanListener != null) {
+                                playBeepAndVibrate();
+                                onScanListener.onSuccess(barcodes, graphicOverlay);
+                            }
+                        }
+                    }
+                })
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        Log.e(TAG, "Barcode detection failed " + e);
+                        if(onScanListener != null) {
+                            onScanListener.onFail(1, e);
+                        }
+                    }
+                });
     }
 
     public interface OnScanListener {
@@ -100,9 +182,7 @@ public class MLKit implements LifecycleObserver {
     /**
      * 设置是否分析图像，通过此方法可以动态控制是否分析图像，常用于中断扫码识别。如：连扫时，扫到结果，然后停止分析图像
      *
-     * 1. 因为分析图像默认为true，如果想支持连扫，在{@link OnScanListener#onSuccess(List<Barcode>, GraphicOverlay)}返回true拦截即可。
-     * 当连扫的处理逻辑比较复杂时，请在处理逻辑前通过调用setAnalyzeImage(false)来停止分析图像，
-     * 等逻辑处理完后再调用setAnalyze(true)来继续分析图像。
+     * 1. 因为分析图像默认为true，如果想支持连扫，设置setAnalyze(false)即可。
      *
      * 2. 如果只是想拦截扫码结果回调自己处理逻辑，但并不想继续分析图像（即不想连扫），可通过
      * 调用setAnalyze(false)来停止分析图像。
@@ -120,8 +200,9 @@ public class MLKit implements LifecycleObserver {
         this.options = options;
     }
 
-    public void switchCamera(boolean isFront) {
+    public void switchCamera() {
         if (cameraSource != null) {
+            boolean isFront = cameraSource.getCameraFacing() == CameraSource.CAMERA_FACING_FRONT;
             if (isFront) {
                 cameraSource.setFacing(CameraSource.CAMERA_FACING_FRONT);
             } else {
@@ -130,6 +211,47 @@ public class MLKit implements LifecycleObserver {
         }
         preview.stop();
         startCameraSource();
+    }
+
+    public void setPlayBeepAndVibrate(boolean playBeep, boolean vibrate) {
+        this.playBeep = playBeep;
+        this.vibrate = vibrate;
+    }
+
+    public void playBeepAndVibrate() {
+        if(beepManager != null) {
+            beepManager.playBeepSoundAndVibrate(playBeep, vibrate);
+        }
+    }
+
+    public boolean hasLight() {
+        return activity.getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA_FLASH);
+    }
+
+    /**
+     * 开关闪关灯
+     */
+    public void switchLight() {
+        if (hasLight()) {
+            if (isOpenLight) {
+                closeTorch();
+            } else {
+                openTorch();
+            }
+            isOpenLight = !isOpenLight;
+        }
+    }
+
+    public void openTorch() {
+        if(cameraSource != null) {
+            cameraSource.setTorch(true);
+        }
+    }
+
+    public void closeTorch() {
+        if(cameraSource != null) {
+            cameraSource.setTorch(false);
+        }
     }
 
     private void createCameraSource() {

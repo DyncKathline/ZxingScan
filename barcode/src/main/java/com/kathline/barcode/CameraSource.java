@@ -37,6 +37,8 @@ import com.google.android.gms.common.images.Size;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.IdentityHashMap;
 import java.util.List;
 
@@ -705,5 +707,46 @@ public class CameraSource {
   /** Cleans up graphicOverlay and child classes can do their cleanups as well . */
   private void cleanScreen() {
     graphicOverlay.clear();
+  }
+
+  public synchronized void setTorch(boolean on) {
+    Camera.Parameters parameters = camera.getParameters();
+    List<String> supportedFlashModes = parameters.getSupportedFlashModes();
+    String flashMode;
+    if (on) {
+      flashMode = findSettableValue("flash mode",
+              supportedFlashModes,
+              Camera.Parameters.FLASH_MODE_TORCH,
+              Camera.Parameters.FLASH_MODE_ON);
+    } else {
+      flashMode = findSettableValue("flash mode",
+              supportedFlashModes,
+              Camera.Parameters.FLASH_MODE_OFF);
+    }
+    if (flashMode != null) {
+      if (flashMode.equals(parameters.getFlashMode())) {
+        Log.i(TAG, "Flash mode already set to " + flashMode);
+      } else {
+        Log.i(TAG, "Setting flash mode to " + flashMode);
+        parameters.setFlashMode(flashMode);
+      }
+    }
+  }
+
+  private static String findSettableValue(String name,
+                                          Collection<String> supportedValues,
+                                          String... desiredValues) {
+    Log.i(TAG, "Requesting " + name + " value from among: " + Arrays.toString(desiredValues));
+    Log.i(TAG, "Supported " + name + " values: " + supportedValues);
+    if (supportedValues != null) {
+      for (String desiredValue : desiredValues) {
+        if (supportedValues.contains(desiredValue)) {
+          Log.i(TAG, "Can set " + name + " to: " + desiredValue);
+          return desiredValue;
+        }
+      }
+    }
+    Log.i(TAG, "No supported values match");
+    return null;
   }
 }
