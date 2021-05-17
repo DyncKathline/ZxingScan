@@ -8,7 +8,7 @@ android {
         minSdkVersion 16
         targetSdkVersion 30
         versionCode 1
-        versionName "1.0"
+        versionName "1.8"
 
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
         consumerProguardFiles "consumer-rules.pro"
@@ -32,3 +32,10 @@ dependencies {
     implementation 'com.google.guava:guava:27.1-android'
     api 'androidx.lifecycle:lifecycle-runtime:2.2.0'
 }
+
+ext {
+    PUBLISH_GROUP_ID = "com.github.dynckathline"
+    PUBLISH_ARTIFACT_ID = "barcode"
+    PUBLISH_VERSION = android.defaultConfig.versionName
+}
+apply from: "${rootProject.projectDir}/mavencentral.gradle"
