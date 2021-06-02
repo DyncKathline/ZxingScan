@@ -40,7 +40,8 @@ public class MLKit implements LifecycleObserver {
     private CameraSource cameraSource = null;
     private CameraSourcePreview preview;
     private GraphicOverlay graphicOverlay;
-    private boolean isAnalyze = true;
+    private boolean isAnalyze = true;//是否分析结果
+    private boolean isContinuousScanning = true;//是否连续扫描
     public BarcodeScannerOptions options;
 
     private BeepManager beepManager;
@@ -115,18 +116,11 @@ public class MLKit implements LifecycleObserver {
                         if (barcodes.isEmpty()) {
                             Log.v(TAG, "No barcode has been detected");
                         }
-                        for (int i = 0; i < barcodes.size(); ++i) {
-                            Barcode barcode = barcodes.get(i);
-                            graphicOverlay.add(new BarcodeGraphic(graphicOverlay, barcode));
-                        }
                         if(isAnalyze()) {
                             if(onScanListener != null) {
-                                playBeepAndVibrate();
-                                onScanListener.onSuccess(barcodes, graphicOverlay);
-                            }
-                        }else {
-                            if(onScanListener != null) {
-                                playBeepAndVibrate();
+                                if(!barcodes.isEmpty()) {
+                                    playBeepAndVibrate();
+                                }
                                 onScanListener.onSuccess(barcodes, graphicOverlay);
                             }
                         }

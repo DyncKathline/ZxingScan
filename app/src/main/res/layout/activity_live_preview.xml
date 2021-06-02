@@ -11,7 +11,7 @@
         android:id="@+id/preview_box"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        app:ratio="w,4:3"
+        app:ratio="w,9:16"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent">
 
@@ -25,16 +25,12 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"/>
 
-    </org.dync.zxingscan.RatioLayout>
+        <com.kathline.barcode.GraphicOverlay
+            android:id="@+id/graphic_overlay"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"/>
 
-    <com.kathline.barcode.GraphicOverlay
-        android:id="@+id/graphic_overlay"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        app:layout_constraintLeft_toLeftOf="@id/preview_box"
-        app:layout_constraintRight_toRightOf="@id/preview_box"
-        app:layout_constraintTop_toTopOf="@id/preview_box"
-        app:layout_constraintBottom_toBottomOf="@id/preview_box"/>
+    </org.dync.zxingscan.RatioLayout>
 
     <ImageView
         android:id="@+id/img_switch_camera"
@@ -51,8 +47,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         app:layout_constraintBottom_toBottomOf="parent"
-        android:orientation="vertical"
-        android:paddingBottom="16dp">
+        android:orientation="vertical">
 
         <TextView
             android:id="@+id/scan_hint"

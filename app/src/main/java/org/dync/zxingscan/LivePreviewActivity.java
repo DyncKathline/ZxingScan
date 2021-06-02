@@ -5,6 +5,9 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.util.Log;
@@ -13,6 +16,7 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -78,7 +82,7 @@ public class LivePreviewActivity extends AppCompatActivity
         //构造出扫描管理器
         configViewFinderView(viewfinderView);
         mlKit = new MLKit(this, preview, graphicOverlay);
-        mlKit.setPlayBeepAndVibrate(true, true);
+        mlKit.setPlayBeepAndVibrate(false, false);
         //仅识别二维码
         BarcodeScannerOptions options =
                 new BarcodeScannerOptions.Builder()
@@ -90,47 +94,7 @@ public class LivePreviewActivity extends AppCompatActivity
         mlKit.setOnScanListener(new MLKit.OnScanListener() {
             @Override
             public void onSuccess(List<Barcode> barcodes, @NonNull GraphicOverlay graphicOverlay) {
-                if (barcodes.isEmpty()) {
-                    return;
-                }
-                mlKit.setAnalyze(false);
-                StringBuilder stringBuilder = new StringBuilder();
-                for (int i = 0; i < barcodes.size(); ++i) {
-                    Barcode barcode = barcodes.get(i);
-                    graphicOverlay.add(new BarcodeGraphic(graphicOverlay, barcode));
-                    stringBuilder.append("[" + i + "] ").append(barcode.getRawValue()).append("\n");
-                }
-                CustomDialog.Builder builder = new CustomDialog.Builder(context);
-                CustomDialog dialog = builder
-                        .setContentView(R.layout.barcode_result_dialog)
-                        .setLayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT)
-                        .setOnInitListener(new CustomDialog.Builder.OnInitListener() {
-                            @Override
-                            public void init(CustomDialog customDialog) {
-                                Button btnDialogCancel = customDialog.findViewById(R.id.btnDialogCancel);
-                                Button btnDialogOK = customDialog.findViewById(R.id.btnDialogOK);
-                                TextView tvDialogContent = customDialog.findViewById(R.id.tvDialogContent);
-                                ImageView ivDialogContent = customDialog.findViewById(R.id.ivDialogContent);
-
-                                tvDialogContent.setText(stringBuilder.toString());
-                                ivDialogContent.setVisibility(View.GONE);
-                                btnDialogCancel.setOnClickListener(new View.OnClickListener() {
-                                    @Override
-                                    public void onClick(View v) {
-                                        customDialog.dismiss();
-                                        finish();
-                                    }
-                                });
-                                btnDialogOK.setOnClickListener(new View.OnClickListener() {
-                                    @Override
-                                    public void onClick(View v) {
-                                        customDialog.dismiss();
-                                        mlKit.setAnalyze(true);
-                                    }
-                                });
-                            }
-                        })
-                        .build();
+                showScanResult(barcodes, graphicOverlay);
             }
 
             @Override
@@ -138,6 +102,79 @@ public class LivePreviewActivity extends AppCompatActivity
 
             }
         });
+    }
+
+    private void showScanResult(List<Barcode> barcodes, @NonNull GraphicOverlay graphicOverlay) {
+        if (barcodes.isEmpty()) {
+            return;
+        }
+        Bitmap bitmap = loadBitmapFromView(this.graphicOverlay);
+//        mlKit.setAnalyze(false);
+        StringBuilder stringBuilder = new StringBuilder();
+        for (int i = 0; i < barcodes.size(); ++i) {
+            Barcode barcode = barcodes.get(i);
+            BarcodeGraphic graphic = new BarcodeGraphic(graphicOverlay, barcode);
+            graphic.setOnTouchListener(new BarcodeGraphic.OnTouchListener() {
+                @Override
+                public void onTouch(Barcode barcode) {
+                    Toast.makeText(LivePreviewActivity.this, barcode.getRawValue(), Toast.LENGTH_SHORT).show();
+                }
+            });
+            graphicOverlay.add(graphic);
+            stringBuilder.append("[" + i + "] ").append(barcode.getRawValue()).append("\n");
+        }
+//                CustomDialog.Builder builder = new CustomDialog.Builder(context);
+//                CustomDialog dialog = builder
+//                        .setContentView(R.layout.barcode_result_dialog)
+//                        .setLayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+//                        .setOnInitListener(new CustomDialog.Builder.OnInitListener() {
+//                            @Override
+//                            public void init(CustomDialog customDialog) {
+//                                Button btnDialogCancel = customDialog.findViewById(R.id.btnDialogCancel);
+//                                Button btnDialogOK = customDialog.findViewById(R.id.btnDialogOK);
+//                                TextView tvDialogContent = customDialog.findViewById(R.id.tvDialogContent);
+//                                ImageView ivDialogContent = customDialog.findViewById(R.id.ivDialogContent);
+//
+//                                tvDialogContent.setText(stringBuilder.toString());
+////                                ivDialogContent.setVisibility(View.GONE);
+//                                ivDialogContent.setImageBitmap(bitmap);
+//                                btnDialogCancel.setOnClickListener(new View.OnClickListener() {
+//                                    @Override
+//                                    public void onClick(View v) {
+//                                        customDialog.dismiss();
+//                                        finish();
+//                                    }
+//                                });
+//                                btnDialogOK.setOnClickListener(new View.OnClickListener() {
+//                                    @Override
+//                                    public void onClick(View v) {
+//                                        customDialog.dismiss();
+//                                        mlKit.setAnalyze(true);
+//                                    }
+//                                });
+//                            }
+//                        })
+//                        .build();
+    }
+
+    public static Bitmap loadBitmapFromView(View v) {
+        v.setDrawingCacheEnabled(true);
+        v.setDrawingCacheQuality(View.DRAWING_CACHE_QUALITY_HIGH);
+        v.setDrawingCacheBackgroundColor(Color.WHITE);
+
+        int w = v.getWidth();
+        int h = v.getHeight();
+
+        Bitmap bmp = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
+        Canvas c = new Canvas(bmp);
+
+        c.drawColor(Color.WHITE);
+        /** 如果不设置canvas画布为白色，则生成透明 */
+
+        v.layout(0, 0, w, h);
+        v.draw(c);
+
+        return bmp;
     }
 
     private void configViewFinderView(ViewfinderView viewfinderView) {
@@ -192,6 +229,17 @@ public class LivePreviewActivity extends AppCompatActivity
                             photo_path = Utils.getPath(getApplicationContext(), data.getData());
                         }
                         mlKit.scanningImage(photo_path);
+                        mlKit.setOnScanListener(new MLKit.OnScanListener() {
+                            @Override
+                            public void onSuccess(List<Barcode> barcodes, @NonNull GraphicOverlay graphicOverlay) {
+                                showScanResult(barcodes, graphicOverlay);
+                            }
+
+                            @Override
+                            public void onFail(int code, Exception e) {
+
+                            }
+                        });
                     }
             }
         }
