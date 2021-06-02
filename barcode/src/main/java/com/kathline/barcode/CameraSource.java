@@ -389,8 +389,7 @@ public class CameraSource {
    */
   public static class SizePair {
     public final Size preview;
-    @Nullable
-    public final Size picture;
+    @Nullable public final Size picture;
 
     SizePair(Camera.Size previewSize, @Nullable Camera.Size pictureSize) {
       preview = new Size(previewSize.width, previewSize.height);
@@ -730,6 +729,7 @@ public class CameraSource {
         Log.i(TAG, "Setting flash mode to " + flashMode);
         parameters.setFlashMode(flashMode);
       }
+      camera.setParameters(parameters);
     }
   }
 

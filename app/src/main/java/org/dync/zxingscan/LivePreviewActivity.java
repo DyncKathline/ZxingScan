@@ -90,7 +90,7 @@ public class LivePreviewActivity extends AppCompatActivity
                                 Barcode.FORMAT_QR_CODE,
                                 Barcode.FORMAT_AZTEC)
                         .build();
-        mlKit.setBarcodeFormats(options);
+        mlKit.setBarcodeFormats(null);
         mlKit.setOnScanListener(new MLKit.OnScanListener() {
             @Override
             public void onSuccess(List<Barcode> barcodes, @NonNull GraphicOverlay graphicOverlay) {
@@ -108,18 +108,11 @@ public class LivePreviewActivity extends AppCompatActivity
         if (barcodes.isEmpty()) {
             return;
         }
-        Bitmap bitmap = loadBitmapFromView(this.graphicOverlay);
 //        mlKit.setAnalyze(false);
         StringBuilder stringBuilder = new StringBuilder();
         for (int i = 0; i < barcodes.size(); ++i) {
             Barcode barcode = barcodes.get(i);
             BarcodeGraphic graphic = new BarcodeGraphic(graphicOverlay, barcode);
-            graphic.setOnTouchListener(new BarcodeGraphic.OnTouchListener() {
-                @Override
-                public void onTouch(Barcode barcode) {
-                    Toast.makeText(LivePreviewActivity.this, barcode.getRawValue(), Toast.LENGTH_SHORT).show();
-                }
-            });
             graphicOverlay.add(graphic);
             stringBuilder.append("[" + i + "] ").append(barcode.getRawValue()).append("\n");
         }

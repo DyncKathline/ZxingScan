@@ -52,8 +52,8 @@ public class BitmapUtils {
     data.get(imageInBuffer, 0, imageInBuffer.length);
     try {
       YuvImage image =
-          new YuvImage(
-              imageInBuffer, ImageFormat.NV21, metadata.getWidth(), metadata.getHeight(), null);
+              new YuvImage(
+                      imageInBuffer, ImageFormat.NV21, metadata.getWidth(), metadata.getHeight(), null);
       ByteArrayOutputStream stream = new ByteArrayOutputStream();
       image.compressToJpeg(new Rect(0, 0, metadata.getWidth(), metadata.getHeight()), 80, stream);
 
@@ -78,7 +78,7 @@ public class BitmapUtils {
     // Mirror the image along the X or Y axis.
     matrix.postScale(flipX ? -1.0f : 1.0f, flipY ? -1.0f : 1.0f);
     Bitmap rotatedBitmap =
-        Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
+            Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
 
     // Recycle the old bitmap if it has changed.
     if (rotatedBitmap != bitmap) {
@@ -89,7 +89,7 @@ public class BitmapUtils {
 
   @Nullable
   public static Bitmap getBitmapFromContentUri(ContentResolver contentResolver, Uri imageUri)
-      throws IOException {
+          throws IOException {
     Bitmap decodedBitmap = MediaStore.Images.Media.getBitmap(contentResolver, imageUri);
     if (decodedBitmap == null) {
       return null;
@@ -139,7 +139,7 @@ public class BitmapUtils {
     // See also:
     // https://android-developers.googleblog.com/2016/12/introducing-the-exifinterface-support-library.html
     if (!ContentResolver.SCHEME_CONTENT.equals(imageUri.getScheme())
-        && !ContentResolver.SCHEME_FILE.equals(imageUri.getScheme())) {
+            && !ContentResolver.SCHEME_FILE.equals(imageUri.getScheme())) {
       return 0;
     }
 
@@ -223,7 +223,7 @@ public class BitmapUtils {
 
     // Check that the buffers are equal and have the expected number of elements.
     boolean areNV21 =
-        (vBuffer.remaining() == (2 * imageSize / 4 - 2)) && (vBuffer.compareTo(uBuffer) == 0);
+            (vBuffer.remaining() == (2 * imageSize / 4 - 2)) && (vBuffer.compareTo(uBuffer) == 0);
 
     // Restore buffers to their initial state.
     vBuffer.position(vBufferPosition);

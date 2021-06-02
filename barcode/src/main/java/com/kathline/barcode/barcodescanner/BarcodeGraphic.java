@@ -19,10 +19,7 @@ package com.kathline.barcode.barcodescanner;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
-import android.graphics.Path;
-import android.graphics.Rect;
 import android.graphics.RectF;
-import android.view.MotionEvent;
 
 import com.google.mlkit.vision.barcode.Barcode;
 import com.kathline.barcode.GraphicOverlay;
@@ -42,7 +39,6 @@ public class BarcodeGraphic extends GraphicOverlay.Graphic {
   private final Paint barcodePaint;
   private final Barcode barcode;
   private final Paint labelPaint;
-  private RectF rect;
 
   public BarcodeGraphic(GraphicOverlay overlay, Barcode barcode) {
     super(overlay);
@@ -73,7 +69,7 @@ public class BarcodeGraphic extends GraphicOverlay.Graphic {
     }
 
     // Draws the bounding box around the BarcodeBlock.
-    rect = new RectF(barcode.getBoundingBox());
+    RectF rect = new RectF(barcode.getBoundingBox());
     // If the image is flipped, the left will be translated to right, and the right to left.
     float x0 = translateX(rect.left);
     float x1 = translateX(rect.right);
@@ -84,70 +80,15 @@ public class BarcodeGraphic extends GraphicOverlay.Graphic {
     canvas.drawRect(rect, rectPaint);
 
     // Draws other object info.
-    float lineHeight = TEXT_SIZE + (2 * STROKE_WIDTH);
-    float textWidth = barcodePaint.measureText(barcode.getRawValue());
-    canvas.drawRect(
-        rect.left - STROKE_WIDTH,
-        rect.top - lineHeight,
-        rect.left + textWidth + (2 * STROKE_WIDTH),
-        rect.top,
-        labelPaint);
-    // Renders the barcode at the bottom of the box.
-    canvas.drawText(barcode.getRawValue(), rect.left, rect.top - STROKE_WIDTH, barcodePaint);
+//    float lineHeight = TEXT_SIZE + (2 * STROKE_WIDTH);
+//    float textWidth = barcodePaint.measureText(barcode.getRawValue());
+//    canvas.drawRect(
+//        rect.left - STROKE_WIDTH,
+//        rect.top - lineHeight,
+//        rect.left + textWidth + (2 * STROKE_WIDTH),
+//        rect.top,
+//        labelPaint);
+//    // Renders the barcode at the bottom of the box.
+//    canvas.drawText(barcode.getRawValue(), rect.left, rect.top - STROKE_WIDTH, barcodePaint);
   }
-
-  @Override
-  public boolean dispatchTouchEvent(MotionEvent event) {
-//    int x = (int) event.getRawX();
-//    int y = (int) event.getRawY();
-//    if (isTouchPointInView(viewGroup, x, y)) {
-//      iosInterceptFlag = true;
-//      return super.dispatchTouchEvent(event);
-//    }
-    return super.dispatchTouchEvent(event);
-  }
-
-  boolean isTouching;
-
-  public interface OnTouchListener {
-    void onTouch(Barcode barcode);
-  }
-
-  private OnTouchListener onTouchListener;
-
-  public void setOnTouchListener(OnTouchListener listener) {
-    onTouchListener = listener;
-  }
-
-  @Override
-  public boolean onTouchEvent(MotionEvent event) {
-    int x = (int) event.getRawX();
-    int y = (int) event.getRawY();
-    if (isTouchPointInView(rect, x, y)) {
-      if(onTouchListener != null) {
-        onTouchListener.onTouch(barcode);
-      }
-      return true;
-    }else {
-      return super.onTouchEvent(event);
-    }
-  }
-
-  //(x,y)是否在view的区域内
-  private boolean isTouchPointInView(RectF rect, int x, int y) {
-    if (rect == null) {
-      return false;
-    }
-    float left = rect.left;
-    float top = rect.top;
-    float right = rect.right;
-    float bottom = rect.bottom;
-    //view.isClickable() &&
-    if (y >= top && y <= bottom && x >= left
-            && x <= right) {
-      return true;
-    }
-    return false;
-  }
-
 }

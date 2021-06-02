@@ -116,7 +116,7 @@ public abstract class VisionProcessorBase<T> implements VisionImageProcessor {
   // -----------------Code for processing live preview frame from Camera1 API-----------------------
   @Override
   public synchronized void processByteBuffer(
-          ByteBuffer data, final FrameMetadata frameMetadata, final GraphicOverlay graphicOverlay) {
+      ByteBuffer data, final FrameMetadata frameMetadata, final GraphicOverlay graphicOverlay) {
     latestImage = data;
     latestImageMetaData = frameMetadata;
     if (processingImage == null && processingMetaData == null) {
@@ -135,28 +135,28 @@ public abstract class VisionProcessorBase<T> implements VisionImageProcessor {
   }
 
   private void processImage(
-          ByteBuffer data, final FrameMetadata frameMetadata, final GraphicOverlay graphicOverlay) {
+      ByteBuffer data, final FrameMetadata frameMetadata, final GraphicOverlay graphicOverlay) {
     long frameStartMs = SystemClock.elapsedRealtime();
 
     // If live viewport is on (that is the underneath surface view takes care of the camera preview
     // drawing), skip the unnecessary bitmap creation that used for the manual preview drawing.
     Bitmap bitmap =
-            PreferenceUtils.isCameraLiveViewportEnabled(graphicOverlay.getContext())
-                    ? null
-                    : BitmapUtils.getBitmap(data, frameMetadata);
+        PreferenceUtils.isCameraLiveViewportEnabled(graphicOverlay.getContext())
+            ? null
+            : BitmapUtils.getBitmap(data, frameMetadata);
 
     requestDetectInImage(
             InputImage.fromByteBuffer(
-                    data,
-                    frameMetadata.getWidth(),
-                    frameMetadata.getHeight(),
-                    frameMetadata.getRotation(),
-                    InputImage.IMAGE_FORMAT_NV21),
+                data,
+                frameMetadata.getWidth(),
+                frameMetadata.getHeight(),
+                frameMetadata.getRotation(),
+                InputImage.IMAGE_FORMAT_NV21),
             graphicOverlay,
             bitmap,
             /* shouldShowFps= */ true,
             frameStartMs)
-            .addOnSuccessListener(executor, results -> processLatestImage(graphicOverlay));
+        .addOnSuccessListener(executor, results -> processLatestImage(graphicOverlay));
   }
 
   // -----------------Common processing logic-------------------------------------------------------
