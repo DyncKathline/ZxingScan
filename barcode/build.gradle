@@ -8,7 +8,7 @@ android {
         minSdkVersion 16
         targetSdkVersion 30
         versionCode 1
-        versionName "1.8"
+        versionName "2.0"
 
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
         consumerProguardFiles "consumer-rules.pro"
@@ -28,8 +28,7 @@ android {
 
 dependencies {
     implementation fileTree(dir: "libs", include: ["*.jar"])
-    api 'com.google.mlkit:barcode-scanning:16.1.1'
-    implementation 'com.google.guava:guava:27.1-android'
+    api 'com.google.mlkit:barcode-scanning:16.1.2'
     api 'androidx.lifecycle:lifecycle-runtime:2.2.0'
 }
 
