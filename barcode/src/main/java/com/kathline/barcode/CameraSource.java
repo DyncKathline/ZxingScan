@@ -273,6 +273,9 @@ public class CameraSource {
       requestedCameraId = cameraId;
     }
     Camera camera = Camera.open(requestedCameraId);
+    if(onCameraListener != null) {
+      onCameraListener.open(camera);
+    }
 
     SizePair sizePair = PreferenceUtils.getCameraPreviewSizePair(activity, requestedCameraId);
     if (sizePair == null) {
@@ -762,5 +765,19 @@ public class CameraSource {
     }
     Log.i(TAG, "No supported values match");
     return null;
+  }
+
+  public Camera getCamera() {
+    return camera;
+  }
+
+  public interface OnCameraListener {
+    void open(Camera camera);
+  }
+
+  private OnCameraListener onCameraListener;
+
+  public void setOnCameraListener(OnCameraListener listener) {
+    onCameraListener = listener;
   }
 }

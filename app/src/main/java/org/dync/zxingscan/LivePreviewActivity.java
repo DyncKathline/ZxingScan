@@ -82,7 +82,7 @@ public class LivePreviewActivity extends AppCompatActivity
         //构造出扫描管理器
         configViewFinderView(viewfinderView);
         mlKit = new MLKit(this, preview, graphicOverlay);
-        mlKit.setPlayBeepAndVibrate(false, false);
+        mlKit.setPlayBeepAndVibrate(true, true);
         //仅识别二维码
         BarcodeScannerOptions options =
                 new BarcodeScannerOptions.Builder()
@@ -108,7 +108,7 @@ public class LivePreviewActivity extends AppCompatActivity
         if (barcodes.isEmpty()) {
             return;
         }
-//        mlKit.setAnalyze(false);
+        mlKit.setAnalyze(false);
         StringBuilder stringBuilder = new StringBuilder();
         for (int i = 0; i < barcodes.size(); ++i) {
             Barcode barcode = barcodes.get(i);
@@ -116,38 +116,37 @@ public class LivePreviewActivity extends AppCompatActivity
             graphicOverlay.add(graphic);
             stringBuilder.append("[" + i + "] ").append(barcode.getRawValue()).append("\n");
         }
-//                CustomDialog.Builder builder = new CustomDialog.Builder(context);
-//                CustomDialog dialog = builder
-//                        .setContentView(R.layout.barcode_result_dialog)
-//                        .setLayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT)
-//                        .setOnInitListener(new CustomDialog.Builder.OnInitListener() {
-//                            @Override
-//                            public void init(CustomDialog customDialog) {
-//                                Button btnDialogCancel = customDialog.findViewById(R.id.btnDialogCancel);
-//                                Button btnDialogOK = customDialog.findViewById(R.id.btnDialogOK);
-//                                TextView tvDialogContent = customDialog.findViewById(R.id.tvDialogContent);
-//                                ImageView ivDialogContent = customDialog.findViewById(R.id.ivDialogContent);
-//
-//                                tvDialogContent.setText(stringBuilder.toString());
-////                                ivDialogContent.setVisibility(View.GONE);
-//                                ivDialogContent.setImageBitmap(bitmap);
-//                                btnDialogCancel.setOnClickListener(new View.OnClickListener() {
-//                                    @Override
-//                                    public void onClick(View v) {
-//                                        customDialog.dismiss();
-//                                        finish();
-//                                    }
-//                                });
-//                                btnDialogOK.setOnClickListener(new View.OnClickListener() {
-//                                    @Override
-//                                    public void onClick(View v) {
-//                                        customDialog.dismiss();
-//                                        mlKit.setAnalyze(true);
-//                                    }
-//                                });
-//                            }
-//                        })
-//                        .build();
+                CustomDialog.Builder builder = new CustomDialog.Builder(context);
+                CustomDialog dialog = builder
+                        .setContentView(R.layout.barcode_result_dialog)
+                        .setLayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+                        .setOnInitListener(new CustomDialog.Builder.OnInitListener() {
+                            @Override
+                            public void init(CustomDialog customDialog) {
+                                Button btnDialogCancel = customDialog.findViewById(R.id.btnDialogCancel);
+                                Button btnDialogOK = customDialog.findViewById(R.id.btnDialogOK);
+                                TextView tvDialogContent = customDialog.findViewById(R.id.tvDialogContent);
+                                ImageView ivDialogContent = customDialog.findViewById(R.id.ivDialogContent);
+
+                                tvDialogContent.setText(stringBuilder.toString());
+                                ivDialogContent.setVisibility(View.GONE);
+                                btnDialogCancel.setOnClickListener(new View.OnClickListener() {
+                                    @Override
+                                    public void onClick(View v) {
+                                        customDialog.dismiss();
+                                        finish();
+                                    }
+                                });
+                                btnDialogOK.setOnClickListener(new View.OnClickListener() {
+                                    @Override
+                                    public void onClick(View v) {
+                                        customDialog.dismiss();
+                                        mlKit.setAnalyze(true);
+                                    }
+                                });
+                            }
+                        })
+                        .build();
     }
 
     public static Bitmap loadBitmapFromView(View v) {

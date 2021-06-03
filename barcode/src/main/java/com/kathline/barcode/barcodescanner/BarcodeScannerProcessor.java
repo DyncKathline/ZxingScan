@@ -87,9 +87,6 @@ public class BarcodeScannerProcessor extends VisionProcessorBase<List<Barcode>> 
       }
     }else if(mlKit.isAnalyze()) {
       if(mlKit.onScanListener != null) {
-        if(!barcodes.isEmpty()) {
-          mlKit.playBeepAndVibrate();
-        }
         mlKit.onScanListener.onSuccess(barcodes, graphicOverlay);
       }
     }

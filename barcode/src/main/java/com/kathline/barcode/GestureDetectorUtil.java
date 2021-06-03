@@ -1,4 +1,4 @@
-package org.dync.zxinglibrary.utils;
+package com.kathline.barcode;
 
 import android.annotation.SuppressLint;
 import android.graphics.Rect;
@@ -6,7 +6,6 @@ import android.graphics.RectF;
 import android.hardware.Camera;
 import android.util.Log;
 import android.view.MotionEvent;
-import android.view.SurfaceView;
 import android.view.View;
 
 import java.util.ArrayList;
@@ -15,11 +14,11 @@ import java.util.List;
 public class GestureDetectorUtil {
 
     private final String TAG = "GestureDetectorUtil";
-    private SurfaceView surfaceView;
+    private View surfaceView;
     private float oldDist = 1f;
 
     @SuppressLint("ClickableViewAccessibility")
-    public GestureDetectorUtil(SurfaceView surfaceView, final Camera camera) {
+    public GestureDetectorUtil(View surfaceView, final Camera camera) {
         this.surfaceView = surfaceView;
         surfaceView.setOnTouchListener(new View.OnTouchListener() {
             @Override
@@ -75,30 +74,45 @@ public class GestureDetectorUtil {
         Camera.Size previewSize = params.getPreviewSize();
         Rect focusRect = calculateTapArea(event.getX(), event.getY(), 1f, previewSize);
         Rect meteringRect = calculateTapArea(event.getX(), event.getY(), 1.5f, previewSize);
-        camera.cancelAutoFocus();
-        if (params.getMaxNumFocusAreas() > 0) {
-            List<Camera.Area> focusAreas = new ArrayList<>();
-            focusAreas.add(new Camera.Area(focusRect, 800));
-            params.setFocusAreas(focusAreas);
-        } else {
-            Log.i(TAG, "focus areas not supported");
-        }
-        if (params.getMaxNumMeteringAreas() > 0) {
-            List<Camera.Area> meteringAreas = new ArrayList<>();
-            meteringAreas.add(new Camera.Area(meteringRect, 800));
-            params.setMeteringAreas(meteringAreas);
-        } else {
-            Log.i(TAG, "metering areas not supported");
-        }
         final String currentFocusMode = params.getFocusMode();
-        camera.autoFocus(new Camera.AutoFocusCallback() {
-            @Override
-            public void onAutoFocus(boolean success, Camera camera) {
-                Camera.Parameters params = camera.getParameters();
-                params.setFocusMode(currentFocusMode);
-                camera.setParameters(params);
+        if (params
+                .getSupportedFocusModes()
+                .contains(Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO)) {
+            params.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_VIDEO);
+        } else {
+            Log.i(TAG, "Camera auto focus is not supported on this device.");
+            params.setFocusMode(Camera.Parameters.FOCUS_MODE_AUTO); // 设置对焦模式
+            if (params.getMaxNumFocusAreas() > 0) {
+                List<Camera.Area> focusAreas = new ArrayList<>();
+                focusAreas.add(new Camera.Area(focusRect, 800));
+                params.setFocusAreas(focusAreas);
+            } else {
+                Log.i(TAG, "focus areas not supported");
             }
-        });
+            if (params.getMaxNumMeteringAreas() > 0) {
+                List<Camera.Area> meteringAreas = new ArrayList<>();
+                meteringAreas.add(new Camera.Area(meteringRect, 800));
+                params.setMeteringAreas(meteringAreas);
+            } else {
+                Log.i(TAG, "metering areas not supported");
+            }
+        }
+        try {
+            camera.cancelAutoFocus();// 每次对焦前，需要先取消对焦
+            //本人使用的小米手机在设置聚焦区域的时候经常会出异常，看日志发现是框架层的字符串转int的时候出错了，
+            //目测是小米修改了框架层代码导致，在此try掉，对实际聚焦效果没影响
+            camera.setParameters(params);
+            camera.autoFocus(new Camera.AutoFocusCallback() {
+                @Override
+                public void onAutoFocus(boolean success, Camera camera) {
+                    Camera.Parameters params = camera.getParameters();
+                    params.setFocusMode(currentFocusMode);
+                    camera.setParameters(params);
+                }
+            });
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private static float getFingerSpacing(MotionEvent event) {

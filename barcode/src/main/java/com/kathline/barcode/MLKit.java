@@ -275,6 +275,12 @@ public class MLKit implements LifecycleObserver {
                     Log.d(TAG, "resume: graphOverlay is null");
                 }
                 preview.start(cameraSource, graphicOverlay);
+                cameraSource.setOnCameraListener(new CameraSource.OnCameraListener() {
+                    @Override
+                    public void open(Camera camera) {
+                        new GestureDetectorUtil(preview, camera);
+                    }
+                });
             } catch (IOException e) {
                 Log.e(TAG, "Unable to start camera source.", e);
                 cameraSource.release();

@@ -8,3 +8,8 @@ qrcode4.setImageBitmap(QRCode.createQRCodeWithLogo4("http://www.jianshu.com/user
 qrcode5.setImageBitmap(QRCode.createQRCodeWithLogo5("http://www.jianshu.com/users/4a4eb4feee62/latest_articles", 500, QRCode.drawableToBitmap(getResources().getDrawable(R.drawable.head))));
 qrcode6.setImageBitmap(QRCode.createQRCodeWithLogo6("http://www.jianshu.com/users/4a4eb4feee62/latest_articles", 500, QRCode.drawableToBitmap(getResources().getDrawable(R.drawable.head))));
 ```
+## 效果图
+![image](https://raw.githubusercontent.com/DyncKathline/ZxingScan/master/screenshot/GIF.gif)
+## barcode
+1. 扫描速度比zxinglibrary大大提高速倍，可以和微信媲美，而且可以以任意比例进行预览。
+2. 支持识别多个二维码和条形码。
