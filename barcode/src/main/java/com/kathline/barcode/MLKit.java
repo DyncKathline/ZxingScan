@@ -195,12 +195,15 @@ public class MLKit implements LifecycleObserver {
     }
 
     public void switchCamera() {
-        if (cameraSource != null) {
-            boolean isFront = cameraSource.getCameraFacing() == CameraSource.CAMERA_FACING_FRONT;
-            if (isFront) {
-                cameraSource.setFacing(CameraSource.CAMERA_FACING_FRONT);
-            } else {
+        int numberOfCameras = Camera.getNumberOfCameras();// 获取摄像头个数
+        if (numberOfCameras == 1) {
+            return;
+        }
+        if(cameraSource != null) {
+            if(cameraSource.getCameraFacing() == CameraSource.CAMERA_FACING_FRONT) {
                 cameraSource.setFacing(CameraSource.CAMERA_FACING_BACK);
+            }else {
+                cameraSource.setFacing(CameraSource.CAMERA_FACING_FRONT);
             }
         }
         preview.stop();

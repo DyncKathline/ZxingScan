@@ -256,7 +256,21 @@ public class CameraSource {
   private Camera createCamera() throws IOException {
     int requestedCameraId = getIdForRequestedCamera(facing);
     if (requestedCameraId == -1) {
-      throw new IOException("Could not find requested camera.");
+      int numCameras = Camera.getNumberOfCameras();
+      int cameraId = 0;
+      while (cameraId < numCameras) {
+        Camera.CameraInfo cameraInfo = new Camera.CameraInfo();
+        Camera.getCameraInfo(cameraId, cameraInfo);
+        if (cameraInfo.facing == CameraSource.CAMERA_FACING_FRONT) {
+          break;
+        }
+        cameraId++;
+      }
+      if (cameraId == numCameras) {
+        Log.i(TAG, "No camera facing " + CameraSource.CAMERA_FACING_BACK + "; returning camera #0");
+        cameraId = 0;
+      }
+      requestedCameraId = cameraId;
     }
     Camera camera = Camera.open(requestedCameraId);
 
