@@ -68,12 +68,21 @@ public class PermissionUtil {
                 .setPositiveButton("去设置", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
-                        Intent manageAppIntent = new Intent();
-                        manageAppIntent.setAction(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
-                        //第二个参数为包名
-                        Uri uri = Uri.fromParts("package", fragment.getContext().getPackageName(), null);
-                        manageAppIntent.setData(uri);
-                        fragment.getContext().startActivity(manageAppIntent);
+                        String manufacturer = Build.MANUFACTURER;
+                        String model = Build.MODEL;//手机型号，如MI 6，MI 9 SE
+                        if(manufacturer.equalsIgnoreCase("xiaomi")) {
+                            Intent intent=new Intent();
+                            //model.toUpperCase().contains("MI 6")
+                            intent.setAction("miui.intent.action.APP_PERM_EDITOR");
+                            intent.putExtra("extra_pkgname", fragment.getContext().getPackageName());
+                            fragment.getContext().startActivity(intent);
+                        }else {
+                            //第二个参数为包名
+                            Uri uri = Uri.fromParts("package", fragment.getContext().getPackageName(), null);
+                            Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+                            intent.setData(uri);
+                            fragment.getContext().startActivity(intent);
+                        }
                     }
                 }).create();
         alertDialog.show();

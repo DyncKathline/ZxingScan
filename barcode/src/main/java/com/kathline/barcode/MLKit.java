@@ -64,19 +64,19 @@ public class MLKit implements LifecycleObserver {
         if(beepManager == null) {
             beepManager = new BeepManager(activity);
         }
-        requirePermission();
+        createCameraSource();
     }
 
-    @OnLifecycleEvent(Lifecycle.Event.ON_RESUME)
-    public void onResume() {
-        Log.d(TAG, "onResume");
+    @OnLifecycleEvent(Lifecycle.Event.ON_START)
+    public void onStart() {
+        Log.d(TAG, "onStart");
         createCameraSource();
         startCameraSource();
     }
 
-    @OnLifecycleEvent(Lifecycle.Event.ON_PAUSE)
-    public void onPause() {
-        Log.d(TAG, "onPause");
+    @OnLifecycleEvent(Lifecycle.Event.ON_STOP)
+    public void onStop() {
+        Log.d(TAG, "onStop");
         preview.stop();
     }
 
@@ -146,31 +146,6 @@ public class MLKit implements LifecycleObserver {
 
     public void setOnScanListener(OnScanListener listener) {
         onScanListener = listener;
-    }
-
-    private void requirePermission() {
-        PermissionUtil.getInstance().with(activity).requestPermissions(new String[]{Manifest.permission.CAMERA,
-                Manifest.permission.VIBRATE}, new PermissionUtil.PermissionListener() {
-            @Override
-            public void onGranted() {
-                createCameraSource();
-            }
-
-            @Override
-            public void onDenied(List<String> deniedPermission) {
-                PermissionUtil.getInstance().showDialogTips( deniedPermission, new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        activity.finish();
-                    }
-                });
-            }
-
-            @Override
-            public void onShouldShowRationale(List<String> deniedPermission) {
-                requirePermission();
-            }
-        });
     }
 
     /**
@@ -267,25 +242,61 @@ public class MLKit implements LifecycleObserver {
      */
     private void startCameraSource() {
         if (cameraSource != null) {
-            try {
-                if (preview == null) {
-                    Log.d(TAG, "resume: Preview is null");
+            requirePermission(new CallBack() {
+                @Override
+                public void call() {
+                    try {
+                        if (preview == null) {
+                            Log.d(TAG, "resume: Preview is null");
+                        }
+                        if (graphicOverlay == null) {
+                            Log.d(TAG, "resume: graphOverlay is null");
+                        }
+                        preview.start(cameraSource, graphicOverlay);
+                        cameraSource.setOnCameraListener(new CameraSource.OnCameraListener() {
+                            @Override
+                            public void open(Camera camera) {
+                                new GestureDetectorUtil(preview, camera);
+                            }
+                        });
+                    } catch (IOException e) {
+                        Log.e(TAG, "Unable to start camera source.", e);
+                        cameraSource.release();
+                        cameraSource = null;
+                    }
                 }
-                if (graphicOverlay == null) {
-                    Log.d(TAG, "resume: graphOverlay is null");
+            });
+        }
+    }
+
+    private interface CallBack {
+        void call();
+    }
+
+    private void requirePermission(CallBack callBack) {
+        PermissionUtil.getInstance().with(activity).requestPermissions(new String[]{Manifest.permission.CAMERA,
+                Manifest.permission.VIBRATE}, new PermissionUtil.PermissionListener() {
+            @Override
+            public void onGranted() {
+                if(callBack != null) {
+                    callBack.call();
                 }
-                preview.start(cameraSource, graphicOverlay);
-                cameraSource.setOnCameraListener(new CameraSource.OnCameraListener() {
+            }
+
+            @Override
+            public void onDenied(List<String> deniedPermission) {
+                PermissionUtil.getInstance().showDialogTips( deniedPermission, new DialogInterface.OnClickListener() {
                     @Override
-                    public void open(Camera camera) {
-                        new GestureDetectorUtil(preview, camera);
+                    public void onClick(DialogInterface dialog, int which) {
+                        activity.finish();
                     }
                 });
-            } catch (IOException e) {
-                Log.e(TAG, "Unable to start camera source.", e);
-                cameraSource.release();
-                cameraSource = null;
             }
-        }
+
+            @Override
+            public void onShouldShowRationale(List<String> deniedPermission) {
+                requirePermission(callBack);
+            }
+        });
     }
 }
