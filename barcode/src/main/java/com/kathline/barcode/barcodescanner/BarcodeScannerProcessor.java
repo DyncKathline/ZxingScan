@@ -25,7 +25,6 @@ import androidx.annotation.NonNull;
 import com.google.android.gms.tasks.Task;
 import com.google.mlkit.vision.barcode.Barcode;
 import com.google.mlkit.vision.barcode.BarcodeScanner;
-import com.google.mlkit.vision.barcode.BarcodeScannerOptions;
 import com.google.mlkit.vision.barcode.BarcodeScanning;
 import com.google.mlkit.vision.common.InputImage;
 import com.kathline.barcode.GraphicOverlay;
@@ -75,7 +74,7 @@ public class BarcodeScannerProcessor extends VisionProcessorBase<List<Barcode>> 
 
   @Override
   protected void onSuccess(
-      @NonNull List<Barcode> barcodes, @NonNull GraphicOverlay graphicOverlay) {
+      @NonNull List<Barcode> barcodes, @NonNull GraphicOverlay graphicOverlay, InputImage image) {
     if (barcodes.isEmpty()) {
       Log.v(MANUAL_TESTING_LOG, "No barcode has been detected");
     }
@@ -87,7 +86,7 @@ public class BarcodeScannerProcessor extends VisionProcessorBase<List<Barcode>> 
       }
     }else if(mlKit.isAnalyze()) {
       if(mlKit.onScanListener != null) {
-        mlKit.onScanListener.onSuccess(barcodes, graphicOverlay);
+        mlKit.onScanListener.onSuccess(barcodes, graphicOverlay, image);
       }
     }
   }

@@ -121,7 +121,8 @@ public class MLKit implements LifecycleObserver {
                                 if(!barcodes.isEmpty()) {
                                     playBeepAndVibrate();
                                 }
-                                onScanListener.onSuccess(barcodes, graphicOverlay);
+                                onScanListener.onSuccess(barcodes, graphicOverlay,
+                                        InputImage.fromBitmap(bitmap, 0));
                             }
                         }
                     }
@@ -138,7 +139,7 @@ public class MLKit implements LifecycleObserver {
     }
 
     public interface OnScanListener {
-        void onSuccess(List<Barcode> barcodes, @NonNull GraphicOverlay graphicOverlay);
+        void onSuccess(List<Barcode> barcodes, @NonNull GraphicOverlay graphicOverlay, InputImage image);
         void onFail(int code, Exception e);
     }
 

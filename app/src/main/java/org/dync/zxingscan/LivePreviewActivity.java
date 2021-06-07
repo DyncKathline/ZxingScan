@@ -8,6 +8,7 @@ import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Rect;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.util.Log;
@@ -24,7 +25,11 @@ import androidx.core.app.ActivityCompat;
 
 import com.google.mlkit.vision.barcode.Barcode;
 import com.google.mlkit.vision.barcode.BarcodeScannerOptions;
+import com.google.mlkit.vision.common.InputImage;
+import com.kathline.barcode.BitmapUtils;
+import com.kathline.barcode.CameraImageGraphic;
 import com.kathline.barcode.CameraSourcePreview;
+import com.kathline.barcode.FrameMetadata;
 import com.kathline.barcode.GraphicOverlay;
 import com.kathline.barcode.MLKit;
 import com.kathline.barcode.PermissionUtil;
@@ -33,6 +38,7 @@ import com.kathline.barcode.barcodescanner.BarcodeGraphic;
 
 import com.kathline.barcode.ViewfinderView;
 
+import java.nio.ByteBuffer;
 import java.util.List;
 
 public class LivePreviewActivity extends AppCompatActivity
@@ -93,8 +99,8 @@ public class LivePreviewActivity extends AppCompatActivity
         mlKit.setBarcodeFormats(null);
         mlKit.setOnScanListener(new MLKit.OnScanListener() {
             @Override
-            public void onSuccess(List<Barcode> barcodes, @NonNull GraphicOverlay graphicOverlay) {
-                showScanResult(barcodes, graphicOverlay);
+            public void onSuccess(List<Barcode> barcodes, @NonNull GraphicOverlay graphicOverlay, InputImage image) {
+                showScanResult(barcodes, graphicOverlay, image);
             }
 
             @Override
@@ -104,49 +110,70 @@ public class LivePreviewActivity extends AppCompatActivity
         });
     }
 
-    private void showScanResult(List<Barcode> barcodes, @NonNull GraphicOverlay graphicOverlay) {
+    private void showScanResult(List<Barcode> barcodes, @NonNull GraphicOverlay graphicOverlay, InputImage image) {
         if (barcodes.isEmpty()) {
             return;
         }
-        mlKit.setAnalyze(false);
-        StringBuilder stringBuilder = new StringBuilder();
-        for (int i = 0; i < barcodes.size(); ++i) {
-            Barcode barcode = barcodes.get(i);
-            BarcodeGraphic graphic = new BarcodeGraphic(graphicOverlay, barcode);
-            graphicOverlay.add(graphic);
-            stringBuilder.append("[" + i + "] ").append(barcode.getRawValue()).append("\n");
-        }
-                CustomDialog.Builder builder = new CustomDialog.Builder(context);
-                CustomDialog dialog = builder
-                        .setContentView(R.layout.barcode_result_dialog)
-                        .setLayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT)
-                        .setOnInitListener(new CustomDialog.Builder.OnInitListener() {
-                            @Override
-                            public void init(CustomDialog customDialog) {
-                                Button btnDialogCancel = customDialog.findViewById(R.id.btnDialogCancel);
-                                Button btnDialogOK = customDialog.findViewById(R.id.btnDialogOK);
-                                TextView tvDialogContent = customDialog.findViewById(R.id.tvDialogContent);
-                                ImageView ivDialogContent = customDialog.findViewById(R.id.ivDialogContent);
 
-                                tvDialogContent.setText(stringBuilder.toString());
-                                ivDialogContent.setVisibility(View.GONE);
-                                btnDialogCancel.setOnClickListener(new View.OnClickListener() {
-                                    @Override
-                                    public void onClick(View v) {
-                                        customDialog.dismiss();
-                                        finish();
-                                    }
-                                });
-                                btnDialogOK.setOnClickListener(new View.OnClickListener() {
-                                    @Override
-                                    public void onClick(View v) {
-                                        customDialog.dismiss();
-                                        mlKit.setAnalyze(true);
-                                    }
-                                });
+        mlKit.setAnalyze(false);
+        CustomDialog.Builder builder = new CustomDialog.Builder(context);
+        CustomDialog dialog = builder
+                .setContentView(R.layout.barcode_result_dialog)
+                .setLayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+                .setOnInitListener(new CustomDialog.Builder.OnInitListener() {
+                    @Override
+                    public void init(CustomDialog customDialog) {
+                        Button btnDialogCancel = customDialog.findViewById(R.id.btnDialogCancel);
+                        Button btnDialogOK = customDialog.findViewById(R.id.btnDialogOK);
+                        TextView tvDialogContent = customDialog.findViewById(R.id.tvDialogContent);
+                        ImageView ivDialogContent = customDialog.findViewById(R.id.ivDialogContent);
+
+                        Bitmap bitmap = null;
+                        ByteBuffer byteBuffer = image.getByteBuffer();
+                        if (byteBuffer != null) {
+                            FrameMetadata.Builder builder = new FrameMetadata.Builder();
+                            builder.setWidth(image.getWidth())
+                                    .setHeight(image.getHeight())
+                                    .setRotation(image.getRotationDegrees());
+                            bitmap = BitmapUtils.getBitmap(byteBuffer, builder.build());
+                        } else {
+                            bitmap = image.getBitmapInternal();
+                        }
+                        if (bitmap != null) {
+                            graphicOverlay.add(new CameraImageGraphic(graphicOverlay, bitmap));
+                        } else {
+                            ivDialogContent.setVisibility(View.GONE);
+                        }
+                        StringBuilder stringBuilder = new StringBuilder();
+                        for (int i = 0; i < barcodes.size(); ++i) {
+                            Barcode barcode = barcodes.get(i);
+                            BarcodeGraphic graphic = new BarcodeGraphic(graphicOverlay, barcode);
+                            graphicOverlay.add(graphic);
+                            Rect boundingBox = barcode.getBoundingBox();
+                            stringBuilder.append(String.format("(%d,%d)", boundingBox.left, boundingBox.top)).append(barcode.getRawValue()).append("\n");
+                        }
+                        Bitmap bitmapFromView = loadBitmapFromView(graphicOverlay);
+                        ivDialogContent.setImageBitmap(bitmapFromView);
+
+                        tvDialogContent.setText(stringBuilder.toString());
+
+                        btnDialogCancel.setOnClickListener(new View.OnClickListener() {
+                            @Override
+                            public void onClick(View v) {
+                                customDialog.dismiss();
+                                finish();
                             }
-                        })
-                        .build();
+                        });
+                        btnDialogOK.setOnClickListener(new View.OnClickListener() {
+                            @Override
+                            public void onClick(View v) {
+                                customDialog.dismiss();
+                                mlKit.setAnalyze(true);
+                            }
+                        });
+                    }
+                })
+                .build();
     }
 
     public static Bitmap loadBitmapFromView(View v) {
@@ -186,7 +213,7 @@ public class LivePreviewActivity extends AppCompatActivity
 
             @Override
             public void onDenied(List<String> deniedPermission) {
-                PermissionUtil.getInstance().showDialogTips( deniedPermission, new DialogInterface.OnClickListener() {
+                PermissionUtil.getInstance().showDialogTips(deniedPermission, new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         finish();
@@ -223,8 +250,8 @@ public class LivePreviewActivity extends AppCompatActivity
                         mlKit.scanningImage(photo_path);
                         mlKit.setOnScanListener(new MLKit.OnScanListener() {
                             @Override
-                            public void onSuccess(List<Barcode> barcodes, @NonNull GraphicOverlay graphicOverlay) {
-                                showScanResult(barcodes, graphicOverlay);
+                            public void onSuccess(List<Barcode> barcodes, @NonNull GraphicOverlay graphicOverlay, InputImage image) {
+                                showScanResult(barcodes, graphicOverlay, image);
                             }
 
                             @Override

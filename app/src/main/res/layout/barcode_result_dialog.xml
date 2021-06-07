@@ -70,7 +70,7 @@
             android:background="?android:attr/selectableItemBackground"
             android:paddingTop="10dp"
             android:paddingBottom="10dp"
-            android:text="确认"
+            android:text="重新扫描"
             android:textColor="@color/app_dialog_button_color_selector"
             android:textSize="16sp" />
     </LinearLayout>

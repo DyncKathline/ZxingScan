@@ -19,6 +19,7 @@ package com.kathline.barcode.barcodescanner;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.Rect;
 import android.graphics.RectF;
 
 import com.google.mlkit.vision.barcode.Barcode;
@@ -80,15 +81,18 @@ public class BarcodeGraphic extends GraphicOverlay.Graphic {
     canvas.drawRect(rect, rectPaint);
 
     // Draws other object info.
-//    float lineHeight = TEXT_SIZE + (2 * STROKE_WIDTH);
-//    float textWidth = barcodePaint.measureText(barcode.getRawValue());
-//    canvas.drawRect(
-//        rect.left - STROKE_WIDTH,
-//        rect.top - lineHeight,
-//        rect.left + textWidth + (2 * STROKE_WIDTH),
-//        rect.top,
-//        labelPaint);
-//    // Renders the barcode at the bottom of the box.
+    float lineHeight = TEXT_SIZE + (2 * STROKE_WIDTH);
+    Rect boundingBox = barcode.getBoundingBox();
+    String rawValue = String.format("(%d,%d)", boundingBox.left, boundingBox.top);//barcode.getRawValue();
+    float textWidth = barcodePaint.measureText(rawValue);
+    canvas.drawRect(
+        rect.left - STROKE_WIDTH,
+        rect.top - lineHeight,
+        rect.left + textWidth + (2 * STROKE_WIDTH),
+        rect.top,
+        labelPaint);
+    // Renders the barcode at the bottom of the box.
 //    canvas.drawText(barcode.getRawValue(), rect.left, rect.top - STROKE_WIDTH, barcodePaint);
+    canvas.drawText(rawValue, rect.left, rect.top - STROKE_WIDTH, barcodePaint);
   }
 }
