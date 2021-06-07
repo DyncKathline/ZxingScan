@@ -11,6 +11,7 @@ import android.graphics.Color;
 import android.graphics.Rect;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.text.style.ClickableSpan;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
@@ -88,6 +89,7 @@ public class LivePreviewActivity extends AppCompatActivity
         //构造出扫描管理器
         configViewFinderView(viewfinderView);
         mlKit = new MLKit(this, preview, graphicOverlay);
+        //是否扫描成功后播放提示音和震动
         mlKit.setPlayBeepAndVibrate(true, true);
         //仅识别二维码
         BarcodeScannerOptions options =
@@ -144,18 +146,27 @@ public class LivePreviewActivity extends AppCompatActivity
                         } else {
                             ivDialogContent.setVisibility(View.GONE);
                         }
-                        StringBuilder stringBuilder = new StringBuilder();
+                        SpanUtils spanUtils = SpanUtils.with(tvDialogContent);
                         for (int i = 0; i < barcodes.size(); ++i) {
                             Barcode barcode = barcodes.get(i);
                             BarcodeGraphic graphic = new BarcodeGraphic(graphicOverlay, barcode);
                             graphicOverlay.add(graphic);
                             Rect boundingBox = barcode.getBoundingBox();
-                            stringBuilder.append(String.format("(%d,%d)", boundingBox.left, boundingBox.top)).append(barcode.getRawValue()).append("\n");
+                            spanUtils.append(String.format("(%d,%d)", boundingBox.left, boundingBox.top))
+                                    .append(barcode.getRawValue())
+                                    .setClickSpan(i % 2 == 0 ? getResources().getColor(R.color.colorPrimary) : getResources().getColor(R.color.colorAccent), false, new View.OnClickListener() {
+                                @Override
+                                public void onClick(View v) {
+                                    Toast.makeText(getApplicationContext(), barcode.getRawValue(), Toast.LENGTH_SHORT).show();
+                                }
+                            })
+                                    .setBackgroundColor(i % 2 == 0 ? getResources().getColor(R.color.colorAccent) : getResources().getColor(R.color.colorPrimary))
+                                    .appendLine()
+                                    .appendLine();
                         }
+                        spanUtils.create();
                         Bitmap bitmapFromView = loadBitmapFromView(graphicOverlay);
                         ivDialogContent.setImageBitmap(bitmapFromView);
-
-                        tvDialogContent.setText(stringBuilder.toString());
 
                         btnDialogCancel.setOnClickListener(new View.OnClickListener() {
                             @Override
