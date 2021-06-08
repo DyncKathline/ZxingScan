@@ -296,7 +296,7 @@ public class MLKit implements LifecycleObserver {
 
             @Override
             public void onShouldShowRationale(List<String> deniedPermission) {
-                requirePermission(callBack);
+//                requirePermission(callBack);
             }
         });
     }
