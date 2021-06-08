@@ -10,6 +10,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
+import android.text.TextUtils;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -35,9 +36,9 @@ public class PermissionUtil {
     private static PermissionUtil mInstance;
 
     public static PermissionUtil getInstance() {
-        if (mInstance == null) {
+        if(mInstance == null) {
             synchronized (PermissionUtil.class) {
-                if (mInstance == null) {
+                if(mInstance == null) {
                     mInstance = new PermissionUtil();
                 }
             }
@@ -55,38 +56,41 @@ public class PermissionUtil {
         return this;
     }
 
-    public void showDialogTips(List<String> permission, DialogInterface.OnClickListener onDenied) {
-        if (fragment.getContext() == null) {
-            return;
-        }
-        AlertDialog alertDialog = new AlertDialog.Builder(fragment.getContext()).setTitle("权限被禁用").setMessage(
-                String.format("您拒绝了相关权限，无法正常使用本功能。请前往 设置->应用管理->%s->权限管理中启用 %s 权限",
-                        fragment.getContext().getString(R.string.app_name),
-                        listToString(permission)
-                )).setCancelable(false)
+    public void showDialogTips(Context context, List<String> permission, DialogInterface.OnClickListener onDenied) {
+        showDialogTips(context, String.format("您拒绝了相关权限，无法正常使用本功能。请前往 设置->应用管理->%s->权限管理中启用 %s 权限",
+                context.getString(R.string.app_name),
+                listToString(permission)
+        ), permission, onDenied);
+    }
+
+    public void showDialogTips(final Context context, String msg, final List<String> permission, DialogInterface.OnClickListener onDenied) {
+        String message = TextUtils.isEmpty(msg) ? String.format("您拒绝了相关权限，无法正常使用本功能。请前往 设置->应用管理->%s->权限管理中启用 %s 权限", context.getString(R.string.app_name), listToString(permission)) : msg;
+        android.app.AlertDialog alertDialog = new AlertDialog.Builder(context).setTitle("权限被禁用").setMessage(message).setCancelable(false)
                 .setNegativeButton("返回", onDenied)
                 .setPositiveButton("去设置", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
-                        String manufacturer = Build.MANUFACTURER;
-                        String model = Build.MODEL;//手机型号，如MI 6，MI 9 SE
-                        if(manufacturer.equalsIgnoreCase("xiaomi")) {
-                            Intent intent=new Intent();
-                            //model.toUpperCase().contains("MI 6")
-                            intent.setAction("miui.intent.action.APP_PERM_EDITOR");
-                            intent.putExtra("extra_pkgname", fragment.getContext().getPackageName());
-                            fragment.getContext().startActivity(intent);
-                        }else {
-                            //第二个参数为包名
-                            Uri uri = Uri.fromParts("package", fragment.getContext().getPackageName(), null);
-                            Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
-                            intent.setData(uri);
-                            fragment.getContext().startActivity(intent);
-                        }
+                        Intent intent = PermissionUtil.PermissionSettingPage.getSmartPermissionIntent(context, permission);
+                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                        context.startActivity(intent);
+//                        String manufacturer = Build.MANUFACTURER;
+//                        String model = Build.MODEL;//手机型号，如MI 6，MI 9 SE
+//                        if(manufacturer.equalsIgnoreCase("xiaomi")) {
+//                            Intent intent=new Intent();
+//                            //model.toUpperCase().contains("MI 6")
+//                            intent.setAction("miui.intent.action.APP_PERM_EDITOR");
+//                            intent.putExtra("extra_pkgname", context.getPackageName());
+//                            context.startActivity(intent);
+//                        }else {
+//                            //第二个参数为包名
+//                            Uri uri = Uri.fromParts("package", context.getPackageName(), null);
+//                            Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+//                            intent.setData(uri);
+//                            context.startActivity(intent);
+//                        }
                     }
                 }).create();
         alertDialog.show();
-
     }
 
     public static String listToString(List<String> list) {
@@ -134,9 +138,8 @@ public class PermissionUtil {
 
     /**
      * 外部调用申请权限
-     *
      * @param permissions 申请的权限
-     * @param listener    监听权限接口
+     * @param listener 监听权限接口
      */
     public void requestPermissions(String[] permissions, PermissionListener listener) {
         fragment.setListener(listener);
@@ -161,7 +164,6 @@ public class PermissionUtil {
          * 权限监听接口
          */
         private PermissionListener listener;
-
         public void setListener(PermissionListener listener) {
             this.listener = listener;
         }
@@ -174,7 +176,6 @@ public class PermissionUtil {
 
         /**
          * 申请权限
-         *
          * @param permissions 需要申请的权限
          */
         public void requestPermissions(@NonNull String[] permissions) {
@@ -193,7 +194,7 @@ public class PermissionUtil {
                     //申请授权
                     requestPermissions(requestPermissionList.toArray(new String[requestPermissionList.size()]), PERMISSIONS_REQUEST_CODE);
                 }
-            } else {
+            }else {
                 //已经全部授权
                 permissionAllGranted();
             }
@@ -202,9 +203,8 @@ public class PermissionUtil {
 
         /**
          * fragment回调处理权限的结果
-         *
-         * @param requestCode  请求码 要等于申请时候的请求码
-         * @param permissions  申请的权限
+         * @param requestCode 请求码 要等于申请时候的请求码
+         * @param permissions 申请的权限
          * @param grantResults 对应权限的处理结果
          */
         @Override
@@ -289,7 +289,7 @@ public class PermissionUtil {
      * 是否是 Android 10 及以上版本
      */
     static boolean isAndroid10() {
-        return Build.VERSION.SDK_INT >= 10;//Build.VERSION_CODES.Q
+        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q;
     }
 
     /**
@@ -348,29 +348,19 @@ public class PermissionUtil {
     }
 
     public static class Permission {
-        /**
-         * 外部存储权限（特殊权限，需要 Android 11 及以上）
-         */
+        /** 外部存储权限（特殊权限，需要 Android 11 及以上） */
         public static final String MANAGE_EXTERNAL_STORAGE = "android.permission.MANAGE_EXTERNAL_STORAGE";
 
-        /**
-         * 安装应用权限（特殊权限，需要 Android 8.0 及以上）
-         */
+        /** 安装应用权限（特殊权限，需要 Android 8.0 及以上） */
         public static final String REQUEST_INSTALL_PACKAGES = "android.permission.REQUEST_INSTALL_PACKAGES";
 
-        /**
-         * 通知栏权限（特殊权限，需要 Android 6.0 及以上，注意此权限不需要在清单文件中注册也能申请）
-         */
+        /** 通知栏权限（特殊权限，需要 Android 6.0 及以上，注意此权限不需要在清单文件中注册也能申请） */
         public static final String NOTIFICATION_SERVICE = "android.permission.NOTIFICATION_SERVICE";
 
-        /**
-         * 悬浮窗权限（特殊权限，需要 Android 6.0 及以上）
-         */
+        /** 悬浮窗权限（特殊权限，需要 Android 6.0 及以上） */
         public static final String SYSTEM_ALERT_WINDOW = "android.permission.SYSTEM_ALERT_WINDOW";
 
-        /**
-         * 系统设置权限（特殊权限，需要 Android 6.0 及以上）
-         */
+        /** 系统设置权限（特殊权限，需要 Android 6.0 及以上） */
         public static final String WRITE_SETTINGS = "android.permission.WRITE_SETTINGS";
     }
 

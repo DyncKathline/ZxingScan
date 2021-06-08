@@ -215,7 +215,6 @@ public class LivePreviewActivity extends AppCompatActivity
         PermissionUtil.getInstance().with(this).requestPermissions(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, new PermissionUtil.PermissionListener() {
             @Override
             public void onGranted() {
-
 //        Intent intent = new Intent(Intent.ACTION_PICK);
                 Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
                 intent.setType("image/*");
@@ -224,10 +223,10 @@ public class LivePreviewActivity extends AppCompatActivity
 
             @Override
             public void onDenied(List<String> deniedPermission) {
-                PermissionUtil.getInstance().showDialogTips(deniedPermission, new DialogInterface.OnClickListener() {
+                PermissionUtil.getInstance().showDialogTips(getBaseContext(), deniedPermission, new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        finish();
+//                        finish();
                     }
                 });
             }

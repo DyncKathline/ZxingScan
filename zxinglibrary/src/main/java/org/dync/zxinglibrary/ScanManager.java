@@ -176,17 +176,17 @@ public class ScanManager {
 
             @Override
             public void onDenied(List<String> deniedPermission) {
-                PermissionUtil.getInstance().showDialogTips( deniedPermission, new DialogInterface.OnClickListener() {
+                PermissionUtil.getInstance().showDialogTips(activity, deniedPermission, new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        activity.finish();
+//                        activity.finish();
                     }
                 });
             }
 
             @Override
             public void onShouldShowRationale(List<String> deniedPermission) {
-                requirePermission();
+//                requirePermission();
             }
         });
     }
