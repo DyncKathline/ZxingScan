@@ -186,6 +186,12 @@ public class MLKit implements LifecycleObserver {
         startCameraSource();
     }
 
+    public void setFacing(int facing) {
+        if(cameraSource != null) {
+            cameraSource.setFacing(facing);
+        }
+    }
+
     public void setPlayBeepAndVibrate(boolean playBeep, boolean vibrate) {
         this.playBeep = playBeep;
         this.vibrate = vibrate;
