@@ -24,6 +24,7 @@ import android.graphics.ImageFormat;
 import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
 import android.hardware.Camera.CameraInfo;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.Surface;
 import android.view.SurfaceHolder;
@@ -294,9 +295,9 @@ public class CameraSource {
     Log.v(TAG, "Camera preview size: " + previewSize);
 
     int[] previewFpsRange = selectPreviewFpsRange(camera, REQUESTED_FPS);
-    if (previewFpsRange == null) {
-      throw new IOException("Could not find suitable preview frames per second range.");
-    }
+//    if (previewFpsRange == null) {
+//      throw new IOException("Could not find suitable preview frames per second range.");
+//    }
 
     Camera.Parameters parameters = camera.getParameters();
 
@@ -306,9 +307,11 @@ public class CameraSource {
       parameters.setPictureSize(pictureSize.getWidth(), pictureSize.getHeight());
     }
     parameters.setPreviewSize(previewSize.getWidth(), previewSize.getHeight());
-    parameters.setPreviewFpsRange(
-        previewFpsRange[Camera.Parameters.PREVIEW_FPS_MIN_INDEX],
-        previewFpsRange[Camera.Parameters.PREVIEW_FPS_MAX_INDEX]);
+    if(previewFpsRange != null) {
+      parameters.setPreviewFpsRange(
+              previewFpsRange[Camera.Parameters.PREVIEW_FPS_MIN_INDEX],
+              previewFpsRange[Camera.Parameters.PREVIEW_FPS_MAX_INDEX]);
+    }
     // Use YV12 so that we can exercise YV12->NV21 auto-conversion logic for OCR detection
     parameters.setPreviewFormat(IMAGE_FORMAT);
 
@@ -482,15 +485,18 @@ public class CameraSource {
     int[] selectedFpsRange = null;
     int minUpperBoundDiff = Integer.MAX_VALUE;
     int minLowerBound = Integer.MAX_VALUE;
-    List<int[]> previewFpsRangeList = camera.getParameters().getSupportedPreviewFpsRange();
-    for (int[] range : previewFpsRangeList) {
-      int upperBoundDiff =
-          Math.abs(desiredPreviewFpsScaled - range[Camera.Parameters.PREVIEW_FPS_MAX_INDEX]);
-      int lowerBound = range[Camera.Parameters.PREVIEW_FPS_MIN_INDEX];
-      if (upperBoundDiff <= minUpperBoundDiff && lowerBound <= minLowerBound) {
-        selectedFpsRange = range;
-        minUpperBoundDiff = upperBoundDiff;
-        minLowerBound = lowerBound;
+    String str = camera.getParameters().get("preview-fps-range-value");
+    if(!TextUtils.isEmpty(str)) {
+      List<int[]> previewFpsRangeList = camera.getParameters().getSupportedPreviewFpsRange();
+      for (int[] range : previewFpsRangeList) {
+        int upperBoundDiff =
+                Math.abs(desiredPreviewFpsScaled - range[Camera.Parameters.PREVIEW_FPS_MAX_INDEX]);
+        int lowerBound = range[Camera.Parameters.PREVIEW_FPS_MIN_INDEX];
+        if (upperBoundDiff <= minUpperBoundDiff && lowerBound <= minLowerBound) {
+          selectedFpsRange = range;
+          minUpperBoundDiff = upperBoundDiff;
+          minLowerBound = lowerBound;
+        }
       }
     }
     return selectedFpsRange;

@@ -12,9 +12,12 @@ import android.util.Log;
 import android.view.Surface;
 import android.view.WindowManager;
 
+import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * 无界面采集camera数据
@@ -27,10 +30,16 @@ public class CameraHelper {
     private int mCameraId;
     private int mFrontCameraId = -1;
     private int mBackCameraId = -1;
+    private int facing = CAMERA_FACING_BACK;
     private Camera mCamera;
     private SurfaceTexture surfaceTexture = new SurfaceTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES);
     private boolean shut = false;
     private PreviewCallback mPreviewCallback;
+
+    public static final int CAMERA_FACING_BACK = Camera.CameraInfo.CAMERA_FACING_BACK;
+    public static final int CAMERA_FACING_FRONT = Camera.CameraInfo.CAMERA_FACING_FRONT;
+    public static int DEFAULT_REQUESTED_CAMERA_PREVIEW_WIDTH = 640;
+    public static int DEFAULT_REQUESTED_CAMERA_PREVIEW_HEIGHT = 480;
 
     public void setPreviewCallback(PreviewCallback callback) {
         this.mPreviewCallback = callback;
@@ -65,19 +74,28 @@ public class CameraHelper {
      * 开启指定摄像头
      */
     private void openCamera(int cameraId) {
+        Log.d(TAG, "use Camera[" + cameraId + "].");
         Camera camera = mCamera;
         if (camera != null) {
             throw new RuntimeException("You must close previous camera before open a new one.");
         }
         if (ContextCompat.checkSelfPermission(mContext, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
-            mCamera = Camera.open(cameraId);
-            mCameraId = cameraId;
-            Log.d(TAG, "Camera[" + cameraId + "] has been opened.");
-            int orientation = getCameraDisplayOrientation(mContext, cameraId);
-            mCamera.setDisplayOrientation(orientation);
-            Camera.Parameters parameters = mCamera.getParameters();
-            parameters.setRotation(orientation);
-            mCamera.setParameters(parameters);
+            try {
+                mCamera = Camera.open(cameraId);
+            }catch (Exception e) {
+                e.printStackTrace();
+            }
+            if(mCamera != null) {
+                mCameraId = cameraId;
+                Log.d(TAG, "Camera[" + cameraId + "] has been opened.");
+                int orientation = getCameraDisplayOrientation(mContext, cameraId);
+                mCamera.setDisplayOrientation(orientation);
+                Camera.Parameters parameters = mCamera.getParameters();
+                parameters.setRotation(orientation);
+                mCamera.setParameters(parameters);
+            }
+        }else {
+            Log.e(TAG, "Camera permission hasn't opened.");
         }
     }
 
@@ -144,6 +162,10 @@ public class CameraHelper {
         }
     }
 
+    public void setFacing(int facing) {
+        this.facing = facing;
+    }
+
     public void switchCamera() {
         int numberOfCameras = Camera.getNumberOfCameras();// 获取摄像头个数
         if (numberOfCameras == 1) {
@@ -157,11 +179,41 @@ public class CameraHelper {
 
     public void startPreview() {
         try {
-            openCamera(getCameraId());
+            int requestedCameraId = getIdForRequestedCamera(facing);
+            if (requestedCameraId == -1) {
+                int numCameras = Camera.getNumberOfCameras();
+                int cameraId = 0;
+                while (cameraId < numCameras) {
+                    Camera.CameraInfo cameraInfo = new Camera.CameraInfo();
+                    Camera.getCameraInfo(cameraId, cameraInfo);
+                    if (cameraInfo.facing == CAMERA_FACING_FRONT) {
+                        break;
+                    }
+                    cameraId++;
+                }
+                if (cameraId == numCameras) {
+                    Log.i(TAG, "No camera facing " + CAMERA_FACING_BACK + "; returning camera #0");
+                    cameraId = 0;
+                }
+                requestedCameraId = cameraId;
+            }
+            openCamera(requestedCameraId);
+            if(mCamera == null) {
+                return;
+            }
+
+            SizePair sizePair =
+                    selectSizePair(
+                            mCamera,
+                            DEFAULT_REQUESTED_CAMERA_PREVIEW_WIDTH,
+                            DEFAULT_REQUESTED_CAMERA_PREVIEW_HEIGHT);
+
             Camera.Parameters parameters = mCamera.getParameters();
             parameters.setPreviewFormat(ImageFormat.NV21);
-            parameters.setPreviewSize(640, 480);
-            parameters.setPictureSize(640, 480);
+            parameters.setPreviewSize(sizePair.preview.getWidth(), sizePair.preview.getHeight());
+            if(sizePair.picture != null) {
+                parameters.setPictureSize(sizePair.picture.getWidth(), sizePair.picture.getHeight());
+            }
 
             mCamera.setParameters(parameters);
             mCamera.setPreviewCallback(new Camera.PreviewCallback() {
@@ -195,6 +247,10 @@ public class CameraHelper {
         closeCamera();// 关闭当前的摄像头
     }
 
+    public Camera getCamera() {
+        return mCamera;
+    }
+
     /**
      * 切换前后置时切换ID
      */
@@ -211,14 +267,15 @@ public class CameraHelper {
     /**
      * 获取要开启的相机 ID，优先开启前置。
      */
-    private int getCameraId() {
-        if (hasFrontCamera()) {
-            return mFrontCameraId;
-        } else if (hasBackCamera()) {
-            return mBackCameraId;
-        } else {
-            throw new RuntimeException("No available camera id found.");
+    private int getIdForRequestedCamera(int facing) {
+        Camera.CameraInfo cameraInfo = new Camera.CameraInfo();
+        for (int i = 0; i < Camera.getNumberOfCameras(); ++i) {
+            Camera.getCameraInfo(i, cameraInfo);
+            if (cameraInfo.facing == facing) {
+                return i;
+            }
         }
+        return -1;
     }
 
     /**
@@ -270,6 +327,113 @@ public class CameraHelper {
          * @param data yuv格式的数据流
          */
         void onPreviewFrame(byte[] data);
+    }
+
+    ///////////////////////////////////计算合适的camera预览和拍照宽高////////////////////////////////////////////
+    /**
+     * If the absolute difference between a preview size aspect ratio and a picture size aspect ratio
+     * is less than this tolerance, they are considered to be the same aspect ratio.
+     */
+    private static final float ASPECT_RATIO_TOLERANCE = 0.01f;
+
+    /**
+     * Selects the most suitable preview and picture size, given the desired width and height.
+     *
+     * <p>Even though we only need to find the preview size, it's necessary to find both the preview
+     * size and the picture size of the camera together, because these need to have the same aspect
+     * ratio. On some hardware, if you would only set the preview size, you will get a distorted
+     * image.
+     *
+     * @param camera the camera to select a preview size from
+     * @param desiredWidth the desired width of the camera preview frames
+     * @param desiredHeight the desired height of the camera preview frames
+     * @return the selected preview and picture size pair
+     */
+    public static SizePair selectSizePair(Camera camera, int desiredWidth, int desiredHeight) {
+        List<SizePair> validPreviewSizes = generateValidPreviewSizeList(camera);
+
+        // The method for selecting the best size is to minimize the sum of the differences between
+        // the desired values and the actual values for width and height.  This is certainly not the
+        // only way to select the best size, but it provides a decent tradeoff between using the
+        // closest aspect ratio vs. using the closest pixel area.
+        SizePair selectedPair = null;
+        int minDiff = Integer.MAX_VALUE;
+        for (SizePair sizePair : validPreviewSizes) {
+            Size size = sizePair.preview;
+            int diff =
+                    Math.abs(size.getWidth() - desiredWidth) + Math.abs(size.getHeight() - desiredHeight);
+            if (diff < minDiff) {
+                selectedPair = sizePair;
+                minDiff = diff;
+            }
+        }
+
+        return selectedPair;
+    }
+
+    /**
+     * Stores a preview size and a corresponding same-aspect-ratio picture size. To avoid distorted
+     * preview images on some devices, the picture size must be set to a size that is the same aspect
+     * ratio as the preview size or the preview may end up being distorted. If the picture size is
+     * null, then there is no picture size with the same aspect ratio as the preview size.
+     */
+    public static class SizePair {
+        public final Size preview;
+        @Nullable
+        public final Size picture;
+
+        SizePair(Camera.Size previewSize, @Nullable Camera.Size pictureSize) {
+            preview = new Size(previewSize.width, previewSize.height);
+            picture = pictureSize != null ? new Size(pictureSize.width, pictureSize.height) : null;
+        }
+
+        public SizePair(Size previewSize, @Nullable Size pictureSize) {
+            preview = previewSize;
+            picture = pictureSize;
+        }
+    }
+
+    /**
+     * Generates a list of acceptable preview sizes. Preview sizes are not acceptable if there is not
+     * a corresponding picture size of the same aspect ratio. If there is a corresponding picture size
+     * of the same aspect ratio, the picture size is paired up with the preview size.
+     *
+     * <p>This is necessary because even if we don't use still pictures, the still picture size must
+     * be set to a size that is the same aspect ratio as the preview size we choose. Otherwise, the
+     * preview images may be distorted on some devices.
+     */
+    public static List<SizePair> generateValidPreviewSizeList(Camera camera) {
+        Camera.Parameters parameters = camera.getParameters();
+        List<Camera.Size> supportedPreviewSizes = parameters.getSupportedPreviewSizes();
+        List<Camera.Size> supportedPictureSizes = parameters.getSupportedPictureSizes();
+        List<SizePair> validPreviewSizes = new ArrayList<>();
+        for (Camera.Size previewSize : supportedPreviewSizes) {
+            float previewAspectRatio = (float) previewSize.width / (float) previewSize.height;
+
+            // By looping through the picture sizes in order, we favor the higher resolutions.
+            // We choose the highest resolution in order to support taking the full resolution
+            // picture later.
+            for (Camera.Size pictureSize : supportedPictureSizes) {
+                float pictureAspectRatio = (float) pictureSize.width / (float) pictureSize.height;
+                if (Math.abs(previewAspectRatio - pictureAspectRatio) < ASPECT_RATIO_TOLERANCE) {
+                    validPreviewSizes.add(new SizePair(previewSize, pictureSize));
+                    break;
+                }
+            }
+        }
+
+        // If there are no picture sizes with the same aspect ratio as any preview sizes, allow all
+        // of the preview sizes and hope that the camera can handle it.  Probably unlikely, but we
+        // still account for it.
+        if (validPreviewSizes.size() == 0) {
+            Log.w(TAG, "No preview sizes have a corresponding same-aspect-ratio picture size");
+            for (Camera.Size previewSize : supportedPreviewSizes) {
+                // The null picture size will let us know that we shouldn't set a picture size.
+                validPreviewSizes.add(new SizePair(previewSize, null));
+            }
+        }
+
+        return validPreviewSizes;
     }
 
 }
