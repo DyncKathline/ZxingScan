@@ -2,7 +2,7 @@ apply plugin: 'com.android.library'
 
 android {
     compileSdkVersion 30
-    buildToolsVersion "30.0.3"
+//    buildToolsVersion "30.0.3"
 
     defaultConfig {
         minSdkVersion 16
@@ -28,7 +28,7 @@ android {
 
 dependencies {
     implementation fileTree(dir: "libs", include: ["*.jar"])
-    api 'com.google.mlkit:barcode-scanning:16.1.2'
+    api 'com.google.mlkit:barcode-scanning:17.0.1'
     implementation 'com.google.guava:guava:27.1-android'
     api 'androidx.lifecycle:lifecycle-runtime:2.2.0'
 }

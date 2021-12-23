@@ -7,11 +7,11 @@
     android:background="#333"
     android:keepScreenOn="true">
 
-    <org.dync.zxingscan.RatioLayout
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/preview_box"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        app:ratio="w,1:1"
+        android:layout_height="0dp"
+        app:layout_constraintDimensionRatio="w,1:1"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent">
 
@@ -30,7 +30,7 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"/>
 
-    </org.dync.zxingscan.RatioLayout>
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
     <ImageView
         android:id="@+id/img_switch_camera"
