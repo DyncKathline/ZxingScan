@@ -49,6 +49,7 @@ public class MLKit implements LifecycleObserver {
     boolean playBeep = true;
     boolean vibrate = true;
     private BarcodeScanner barcodeScanner;
+    private BarcodeScannerProcessor barcodeScannerProcessor;
 
     public MLKit(FragmentActivity activity, CameraSourcePreview preview, GraphicOverlay graphicOverlay) {
         this.activity = activity;
@@ -239,7 +240,8 @@ public class MLKit implements LifecycleObserver {
             cameraSource = new CameraSource(activity, graphicOverlay);
         }
 
-        cameraSource.setMachineLearningFrameProcessor(new BarcodeScannerProcessor(activity, this));
+        barcodeScannerProcessor = new BarcodeScannerProcessor(activity, this);
+        cameraSource.setMachineLearningFrameProcessor(barcodeScannerProcessor);
     }
 
     /**
@@ -273,6 +275,24 @@ public class MLKit implements LifecycleObserver {
                     }
                 }
             });
+        }
+    }
+
+    /**
+     * 再一次进行扫描识别
+     */
+    public void startProcessor() {
+        barcodeScannerProcessor = new BarcodeScannerProcessor(activity, this);
+        cameraSource.setMachineLearningFrameProcessor(barcodeScannerProcessor);
+    }
+
+    /**
+     * 扫描结果后，停止扫描识别
+     * @see OnScanListener#onSuccess(List, GraphicOverlay, InputImage)
+     */
+    public void stopProcessor() {
+        if (barcodeScannerProcessor != null) {
+            barcodeScannerProcessor.stop();
         }
     }
 

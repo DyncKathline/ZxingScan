@@ -33,6 +33,17 @@
     </androidx.constraintlayout.widget.ConstraintLayout>
 
     <ImageView
+        android:id="@+id/img_back"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_marginLeft="20dp"
+        app:layout_constraintTop_toTopOf="@+id/img_switch_camera"
+        app:layout_constraintBottom_toBottomOf="@+id/img_switch_camera"
+        app:layout_constraintLeft_toLeftOf="parent"
+        android:src="@mipmap/ico_back_white"
+        android:visibility="gone"/>
+
+    <ImageView
         android:id="@+id/img_switch_camera"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -47,6 +58,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         app:layout_constraintBottom_toBottomOf="parent"
+        android:layout_marginBottom="30dp"
         android:orientation="vertical">
 
         <TextView

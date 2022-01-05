@@ -20,6 +20,7 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Matrix;
 import android.util.AttributeSet;
+import android.view.MotionEvent;
 import android.view.View;
 
 import com.google.common.base.Preconditions;
@@ -93,6 +94,14 @@ public class GraphicOverlay extends View {
      */
     public abstract void draw(Canvas canvas);
 
+    public boolean onTouchEvent(MotionEvent event) {
+      return false;
+    }
+
+    public void OnDestroy() {
+
+    }
+
     /** Adjusts the supplied value from the image scale to the view scale. */
     public float scale(float imagePixel) {
       return imagePixel * overlay.scaleFactor;
@@ -147,6 +156,9 @@ public class GraphicOverlay extends View {
   /** Removes all graphics from the overlay. */
   public void clear() {
     synchronized (lock) {
+      for (Graphic graphic : graphics) {
+        graphic.OnDestroy();
+      }
       graphics.clear();
     }
     postInvalidate();
@@ -237,5 +249,17 @@ public class GraphicOverlay extends View {
         graphic.draw(canvas);
       }
     }
+  }
+
+  @Override
+  public boolean onTouchEvent(MotionEvent event) {
+    synchronized (lock) {
+      updateTransformationIfNeeded();
+
+      for (Graphic graphic : graphics) {
+        graphic.onTouchEvent(event);
+      }
+    }
+    return super.onTouchEvent(event);
   }
 }

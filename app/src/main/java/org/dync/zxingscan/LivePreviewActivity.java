@@ -6,26 +6,22 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
 import android.graphics.Bitmap;
-import android.graphics.Canvas;
-import android.graphics.Color;
-import android.graphics.Rect;
 import android.os.Bundle;
 import android.provider.MediaStore;
-import android.text.style.ClickableSpan;
 import android.util.Log;
 import android.view.View;
-import android.view.ViewGroup;
-import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.app.ActivityCompat;
 
-import com.google.mlkit.vision.barcode.common.Barcode;
 import com.google.mlkit.vision.barcode.BarcodeScannerOptions;
+import com.google.mlkit.vision.barcode.common.Barcode;
 import com.google.mlkit.vision.common.InputImage;
 import com.kathline.barcode.BitmapUtils;
 import com.kathline.barcode.CameraImageGraphic;
@@ -35,9 +31,8 @@ import com.kathline.barcode.GraphicOverlay;
 import com.kathline.barcode.MLKit;
 import com.kathline.barcode.PermissionUtil;
 import com.kathline.barcode.Utils;
-import com.kathline.barcode.barcodescanner.BarcodeGraphic;
-
 import com.kathline.barcode.ViewfinderView;
+import com.kathline.barcode.barcodescanner.WxGraphic;
 
 import java.nio.ByteBuffer;
 import java.util.List;
@@ -58,13 +53,19 @@ public class LivePreviewActivity extends AppCompatActivity
     private TextView imgLight;
     private TextView imgExit;
     private ImageView imgSwitchCamera;
+    private ImageView imgBack;
+    private CameraSourcePreview previewView;
+    private ViewfinderView viewfinderView;
+    private ConstraintLayout previewBox;
+    private TextView scanHint;
+    private RelativeLayout bottomMask;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        Log.d(TAG, "onCreate");
 
         setContentView(R.layout.activity_live_preview);
+        initViews();
         context = this;
 
         preview = findViewById(R.id.preview_view);
@@ -75,22 +76,17 @@ public class LivePreviewActivity extends AppCompatActivity
         if (graphicOverlay == null) {
             Log.d(TAG, "graphicOverlay is null");
         }
-        ViewfinderView viewfinderView = findViewById(R.id.viewfinderView);
-        imgGallery = findViewById(R.id.img_gallery);
-        imgLight = findViewById(R.id.img_light);
-        imgExit = findViewById(R.id.img_exit);
-        imgSwitchCamera = findViewById(R.id.img_switch_camera);
 
         imgGallery.setOnClickListener(this);
         imgLight.setOnClickListener(this);
         imgExit.setOnClickListener(this);
         imgSwitchCamera.setOnClickListener(this);
+        imgBack.setOnClickListener(this);
 
         //构造出扫描管理器
-        configViewFinderView(viewfinderView);
         mlKit = new MLKit(this, preview, graphicOverlay);
         //是否扫描成功后播放提示音和震动
-        mlKit.setPlayBeepAndVibrate(true, true);
+        mlKit.setPlayBeepAndVibrate(true, false);
         //仅识别二维码
         BarcodeScannerOptions options =
                 new BarcodeScannerOptions.Builder()
@@ -116,106 +112,44 @@ public class LivePreviewActivity extends AppCompatActivity
         if (barcodes.isEmpty()) {
             return;
         }
-
-        mlKit.setAnalyze(false);
-        CustomDialog.Builder builder = new CustomDialog.Builder(context);
-        CustomDialog dialog = builder
-                .setContentView(R.layout.barcode_result_dialog)
-                .setLayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT)
-                .setOnInitListener(new CustomDialog.Builder.OnInitListener() {
-                    @Override
-                    public void init(CustomDialog customDialog) {
-                        Button btnDialogCancel = customDialog.findViewById(R.id.btnDialogCancel);
-                        Button btnDialogOK = customDialog.findViewById(R.id.btnDialogOK);
-                        TextView tvDialogContent = customDialog.findViewById(R.id.tvDialogContent);
-                        ImageView ivDialogContent = customDialog.findViewById(R.id.ivDialogContent);
-
-                        Bitmap bitmap = null;
-                        ByteBuffer byteBuffer = image.getByteBuffer();
-                        if (byteBuffer != null) {
-                            FrameMetadata.Builder builder = new FrameMetadata.Builder();
-                            builder.setWidth(image.getWidth())
-                                    .setHeight(image.getHeight())
-                                    .setRotation(image.getRotationDegrees());
-                            bitmap = BitmapUtils.getBitmap(byteBuffer, builder.build());
-                        } else {
-                            bitmap = image.getBitmapInternal();
-                        }
-                        if (bitmap != null) {
-                            graphicOverlay.add(new CameraImageGraphic(graphicOverlay, bitmap));
-                        } else {
-                            ivDialogContent.setVisibility(View.GONE);
-                        }
-                        SpanUtils spanUtils = SpanUtils.with(tvDialogContent);
-                        for (int i = 0; i < barcodes.size(); ++i) {
-                            Barcode barcode = barcodes.get(i);
-                            BarcodeGraphic graphic = new BarcodeGraphic(graphicOverlay, barcode);
-                            graphicOverlay.add(graphic);
-                            Rect boundingBox = barcode.getBoundingBox();
-                            spanUtils.append(String.format("(%d,%d)", boundingBox.left, boundingBox.top))
-                                    .append(barcode.getRawValue())
-                                    .setClickSpan(i % 2 == 0 ? getResources().getColor(R.color.colorPrimary) : getResources().getColor(R.color.colorAccent), false, new View.OnClickListener() {
-                                @Override
-                                public void onClick(View v) {
-                                    Toast.makeText(getApplicationContext(), barcode.getRawValue(), Toast.LENGTH_SHORT).show();
-                                }
-                            })
-                                    .setBackgroundColor(i % 2 == 0 ? getResources().getColor(R.color.colorAccent) : getResources().getColor(R.color.colorPrimary))
-                                    .appendLine()
-                                    .appendLine();
-                        }
-                        spanUtils.create();
-                        Bitmap bitmapFromView = loadBitmapFromView(graphicOverlay);
-                        ivDialogContent.setImageBitmap(bitmapFromView);
-
-                        btnDialogCancel.setOnClickListener(new View.OnClickListener() {
-                            @Override
-                            public void onClick(View v) {
-                                customDialog.dismiss();
-                                finish();
-                            }
-                        });
-                        btnDialogOK.setOnClickListener(new View.OnClickListener() {
-                            @Override
-                            public void onClick(View v) {
-                                customDialog.dismiss();
-                                mlKit.setAnalyze(true);
-                            }
-                        });
-                    }
-                })
-                .build();
-    }
-
-    public static Bitmap loadBitmapFromView(View v) {
-        v.setDrawingCacheEnabled(true);
-        v.setDrawingCacheQuality(View.DRAWING_CACHE_QUALITY_HIGH);
-        v.setDrawingCacheBackgroundColor(Color.WHITE);
-
-        int w = v.getWidth();
-        int h = v.getHeight();
-
-        Bitmap bmp = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
-        Canvas c = new Canvas(bmp);
-
-        c.drawColor(Color.WHITE);
-        /** 如果不设置canvas画布为白色，则生成透明 */
-
-        v.layout(0, 0, w, h);
-        v.draw(c);
-
-        return bmp;
-    }
-
-    private void configViewFinderView(ViewfinderView viewfinderView) {
-
+        Bitmap bitmap = null;
+        ByteBuffer byteBuffer = image.getByteBuffer();
+        if (byteBuffer != null) {
+            FrameMetadata.Builder builder = new FrameMetadata.Builder();
+            builder.setWidth(image.getWidth())
+                    .setHeight(image.getHeight())
+                    .setRotation(image.getRotationDegrees());
+            bitmap = BitmapUtils.getBitmap(byteBuffer, builder.build());
+        } else {
+            bitmap = image.getBitmapInternal();
+        }
+        if (bitmap != null) {
+            graphicOverlay.add(new CameraImageGraphic(graphicOverlay, bitmap));
+        }
+        for (int i = 0; i < barcodes.size(); ++i) {
+            Barcode barcode = barcodes.get(i);
+            WxGraphic graphic = new WxGraphic(graphicOverlay, barcode);
+            graphic.setColor(getResources().getColor(R.color.colorAccent));
+            graphic.setOnClickListener(new WxGraphic.OnClickListener() {
+                @Override
+                public void onClick(Barcode barcode) {
+                    Toast.makeText(getApplicationContext(), "圆被点击: " + barcode.getRawValue(), Toast.LENGTH_SHORT).show();
+                }
+            });
+            graphicOverlay.add(graphic);
+        }
+        if (barcodes.size() > 0) {
+            imgBack.setVisibility(View.VISIBLE);
+            imgSwitchCamera.setVisibility(View.INVISIBLE);
+            bottomMask.setVisibility(View.GONE);
+            mlKit.stopProcessor();
+        }
     }
 
     private void requirePermission() {
         PermissionUtil.getInstance().with(this).requestPermissions(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, new PermissionUtil.PermissionListener() {
             @Override
             public void onGranted() {
-//        Intent intent = new Intent(Intent.ACTION_PICK);
                 Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
                 intent.setType("image/*");
                 startActivityForResult(intent, PHOTOREQUESTCODE);
@@ -287,11 +221,30 @@ public class LivePreviewActivity extends AppCompatActivity
                 finish();
                 break;
             case R.id.img_switch_camera:
-                Log.d(TAG, "Set facing");
                 mlKit.switchCamera();
+                break;
+            case R.id.img_back:
+                mlKit.startProcessor();
+                imgBack.setVisibility(View.GONE);
+                imgSwitchCamera.setVisibility(View.VISIBLE);
+                bottomMask.setVisibility(View.VISIBLE);
                 break;
             default:
                 break;
         }
+    }
+
+    private void initViews() {
+        previewView = findViewById(R.id.preview_view);
+        viewfinderView = findViewById(R.id.viewfinderView);
+        graphicOverlay = findViewById(R.id.graphic_overlay);
+        previewBox = findViewById(R.id.preview_box);
+        imgBack = findViewById(R.id.img_back);
+        imgSwitchCamera = findViewById(R.id.img_switch_camera);
+        scanHint = findViewById(R.id.scan_hint);
+        imgLight = findViewById(R.id.img_light);
+        imgExit = findViewById(R.id.img_exit);
+        imgGallery = findViewById(R.id.img_gallery);
+        bottomMask = findViewById(R.id.bottom_mask);
     }
 }
