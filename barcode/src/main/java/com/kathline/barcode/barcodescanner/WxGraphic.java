@@ -17,14 +17,18 @@
 package com.kathline.barcode.barcodescanner;
 
 import android.animation.ValueAnimator;
+import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Path;
+import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.Region;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Log;
 import android.view.MotionEvent;
 
 import androidx.annotation.ColorInt;
@@ -32,6 +36,7 @@ import androidx.annotation.ColorInt;
 import com.google.mlkit.vision.barcode.common.Barcode;
 import com.kathline.barcode.GraphicOverlay;
 
+import static java.lang.Math.floor;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
 
@@ -52,7 +57,8 @@ public class WxGraphic extends GraphicOverlay.Graphic {
     private final Paint labelPaint;
     private Paint paint;
     private float radius = 40f;
-    private @ColorInt int color = Color.parseColor("#6200EE");
+    private @ColorInt
+    int color = Color.parseColor("#6200EE");
     Region circleRegion;
     Path circlePath;
 
@@ -121,7 +127,19 @@ public class WxGraphic extends GraphicOverlay.Graphic {
         Path circle = circlePath;
         // 绘制圆
         canvas.drawPath(circle, paint);
-        if(valueAnimator == null && !isDestroy) {
+        if (bitmap != null) {
+            float x = rect.left + (rect.right - rect.left) / 2f;
+            float y = rect.top + (rect.bottom - rect.top) / 2f;
+            int width = bitmap.getWidth();
+            int height = bitmap.getHeight();
+            float scaleX = (radius) * mProgress / (width / 2f);
+            float scaleY = (radius) * mProgress / (height / 2f);
+            Matrix mMatrix = new Matrix();
+            mMatrix.postScale(scaleX, scaleY, (width / 2f), (height / 2f));
+            mMatrix.postTranslate(x - width / 2f, y - height / 2f);
+            canvas.drawBitmap(bitmap, mMatrix, null);
+        }
+        if (valueAnimator == null && !isDestroy) {
             startAnim();
         }
     }
@@ -135,7 +153,7 @@ public class WxGraphic extends GraphicOverlay.Graphic {
 
                 // ▼点击区域判断
                 if (circleRegion.contains(x, y)) {
-                    if(onClickListener != null) {
+                    if (onClickListener != null) {
                         onClickListener.onClick(barcode);
                     }
                 }
@@ -163,11 +181,17 @@ public class WxGraphic extends GraphicOverlay.Graphic {
         onClickListener = listener;
     }
 
+    public void setBitmap(Bitmap bitmap) {
+        this.bitmap = bitmap;
+        postInvalidate();
+    }
+
     private float mProgress = 1;
     private ValueAnimator valueAnimator;
     private Handler handler = new Handler(Looper.getMainLooper());
     private Runnable resetRunnable;
     private boolean isDestroy;
+    private Bitmap bitmap;
 
     public void startAnim() {
         valueAnimator = ValueAnimator.ofFloat(1, 0.8f, 1, 0.8f, 1);
@@ -176,8 +200,8 @@ public class WxGraphic extends GraphicOverlay.Graphic {
             @Override
             public void onAnimationUpdate(ValueAnimator animation) {
                 mProgress = (float) animation.getAnimatedValue();
-                if(animation.getCurrentPlayTime() >= animation.getDuration()) {
-                    if(handler != null && !isDestroy) {
+                if (animation.getCurrentPlayTime() >= animation.getDuration()) {
+                    if (handler != null && !isDestroy) {
                         handler.postDelayed(resetRunnable = new Runnable() {
                             @Override
                             public void run() {

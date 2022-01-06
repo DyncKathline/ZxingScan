@@ -6,6 +6,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.util.Log;
@@ -130,6 +131,8 @@ public class LivePreviewActivity extends AppCompatActivity
             Barcode barcode = barcodes.get(i);
             WxGraphic graphic = new WxGraphic(graphicOverlay, barcode);
             graphic.setColor(getResources().getColor(R.color.colorAccent));
+            Bitmap bitmapPaint = BitmapFactory.decodeResource(getResources(), R.mipmap.ico_wechat);
+            graphic.setBitmap(bitmapPaint);
             graphic.setOnClickListener(new WxGraphic.OnClickListener() {
                 @Override
                 public void onClick(Barcode barcode) {
