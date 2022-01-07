@@ -31,7 +31,7 @@ import com.kathline.barcode.FrameMetadata;
 import com.kathline.barcode.GraphicOverlay;
 import com.kathline.barcode.MLKit;
 import com.kathline.barcode.PermissionUtil;
-import com.kathline.barcode.Utils;
+import com.kathline.barcode.UriUtils;
 import com.kathline.barcode.ViewfinderView;
 import com.kathline.barcode.barcodescanner.WxGraphic;
 
@@ -188,12 +188,13 @@ public class LivePreviewActivity extends AppCompatActivity
                 case PHOTOREQUESTCODE:
                     String[] proj = {MediaStore.Images.Media.DATA};
                     Cursor cursor = this.getContentResolver().query(data.getData(), proj, null, null, null);
-                    if (cursor.moveToFirst()) {
+                    if (cursor != null && cursor.moveToFirst()) {
                         int colum_index = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
                         photo_path = cursor.getString(colum_index);
                         if (photo_path == null) {
-                            photo_path = Utils.getPath(getApplicationContext(), data.getData());
+                            photo_path = UriUtils.getPath(getApplicationContext(), data.getData());
                         }
+                        cursor.close();
                         mlKit.scanningImage(photo_path);
                         mlKit.setOnScanListener(new MLKit.OnScanListener() {
                             @Override

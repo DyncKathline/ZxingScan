@@ -23,12 +23,10 @@ import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Path;
-import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.Region;
 import android.os.Handler;
 import android.os.Looper;
-import android.util.Log;
 import android.view.MotionEvent;
 
 import androidx.annotation.ColorInt;
@@ -36,7 +34,6 @@ import androidx.annotation.ColorInt;
 import com.google.mlkit.vision.barcode.common.Barcode;
 import com.kathline.barcode.GraphicOverlay;
 
-import static java.lang.Math.floor;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
 
@@ -61,6 +58,8 @@ public class WxGraphic extends GraphicOverlay.Graphic {
     int color = Color.parseColor("#6200EE");
     Region circleRegion;
     Path circlePath;
+    private Bitmap bitmap;
+    private boolean isHideColor;
 
     public WxGraphic(GraphicOverlay overlay, Barcode barcode) {
         super(overlay);
@@ -91,11 +90,28 @@ public class WxGraphic extends GraphicOverlay.Graphic {
 
     public void setRadius(float radius) {
         this.radius = radius;
+        postInvalidate();
     }
 
     public void setColor(@ColorInt int color) {
         this.color = color;
         paint.setColor(color);
+        postInvalidate();
+    }
+
+    public void setBitmap(Bitmap bitmap) {
+        setBitmap(bitmap, true);
+    }
+
+    /**
+     * 当设置图片后，是否显示后面的圆
+     * @param bitmap
+     * @param isHideColor
+     */
+    public void setBitmap(Bitmap bitmap, boolean isHideColor) {
+        this.bitmap = bitmap;
+        this.isHideColor = isHideColor;
+        postInvalidate();
     }
 
     /**
@@ -125,9 +141,12 @@ public class WxGraphic extends GraphicOverlay.Graphic {
         // ▼将 Path 添加到 Region 中
         circleRegion.setPath(circlePath, globalRegion);
         Path circle = circlePath;
-        // 绘制圆
-        canvas.drawPath(circle, paint);
         if (bitmap != null) {
+            if(isHideColor) {
+                paint.setAlpha(0);
+            }
+            // 绘制圆
+            canvas.drawPath(circle, paint);
             float x = rect.left + (rect.right - rect.left) / 2f;
             float y = rect.top + (rect.bottom - rect.top) / 2f;
             int width = bitmap.getWidth();
@@ -138,6 +157,9 @@ public class WxGraphic extends GraphicOverlay.Graphic {
             mMatrix.postScale(scaleX, scaleY, (width / 2f), (height / 2f));
             mMatrix.postTranslate(x - width / 2f, y - height / 2f);
             canvas.drawBitmap(bitmap, mMatrix, null);
+        } else {
+            // 绘制圆
+            canvas.drawPath(circle, paint);
         }
         if (valueAnimator == null && !isDestroy) {
             startAnim();
@@ -181,19 +203,13 @@ public class WxGraphic extends GraphicOverlay.Graphic {
         onClickListener = listener;
     }
 
-    public void setBitmap(Bitmap bitmap) {
-        this.bitmap = bitmap;
-        postInvalidate();
-    }
-
     private float mProgress = 1;
     private ValueAnimator valueAnimator;
     private Handler handler = new Handler(Looper.getMainLooper());
     private Runnable resetRunnable;
     private boolean isDestroy;
-    private Bitmap bitmap;
 
-    public void startAnim() {
+    private void startAnim() {
         valueAnimator = ValueAnimator.ofFloat(1, 0.8f, 1, 0.8f, 1);
         valueAnimator.setDuration(2000);
         valueAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {

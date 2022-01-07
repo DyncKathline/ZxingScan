@@ -36,6 +36,6 @@ dependencies {
     annotationProcessor 'com.jakewharton:butterknife-compiler:10.2.1'
     implementation project(':zxinglibrary')
     implementation project(':barcode')
-//    implementation 'com.github.dynckathline:barcode:1.8'
+//    implementation 'com.github.dynckathline:barcode:2.8'
 //    implementation 'org.dync.kathline:zxinglibrary:1.0'
 }
